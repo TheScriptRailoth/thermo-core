@@ -57,54 +57,58 @@ class GridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class ComponentWidget extends StatefulWidget {
+class ComponentWidget extends StatelessWidget {
   final ComponentModel component;
 
-  const ComponentWidget({Key? key, required this.component}) : super(key: key);
-
-  @override
-  _ComponentWidgetState createState() => _ComponentWidgetState();
-}
-
-class _ComponentWidgetState extends State<ComponentWidget> {
-  bool _isHovered = false;
+  ComponentWidget({Key? key, required this.component}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Explicitly declare boxShadow as List<BoxShadow>
-    final List<BoxShadow> boxShadow = _isHovered
-        ? [
-      BoxShadow(
-        color: Colors.black.withOpacity(0.3),
-        spreadRadius: 1,
-        blurRadius: 5,
-        offset: Offset(0, 3), // Changes position of shadow
-      ),
-    ]
-        : [];
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Transform.scale(
-        scale: _isHovered ? 1.05 : 1.0, // Slightly scale up on hover
-        child: Container(
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
           width: 50,
           height: 50,
           decoration: BoxDecoration(
             color: Colors.blue,
             borderRadius: BorderRadius.circular(8),
-            boxShadow: boxShadow, // Apply the explicitly typed list here
           ),
           child: Center(
-            child: SvgPicture.asset(widget.component.type, width: 30, height: 30),
+            child: SvgPicture.asset(component.type, width: 30, height: 30),
           ),
         ),
-      ),
+        // Pass `context` to `_buildConnectionPoints`
+        ..._buildConnectionPoints(context),
+      ],
     );
   }
-}
 
+  List<Widget> _buildConnectionPoints(BuildContext context) {
+    return component.connectionPoints.entries.map((entry) {
+      Offset pointPosition = entry.value; // Assuming this gives the global position
+
+      return Positioned(
+        left: pointPosition.dx - 10, // Adjust based on actual layout
+        top: pointPosition.dy - 10,
+        child: ConnectionPointButton(
+          iconData: Icons.add, // or any other icon
+          onTap: () {
+            // Handle tap: Start connection drawing process here
+            print("Tapped on connection point at $pointPosition");
+            // You might want to set some state indicating a connection is being started
+          },
+        ),
+      );
+    }).toList();
+  }
+
+
+  void _onConnectionPointTap(BuildContext context, String pointKey, ComponentModel component) {
+    // Implement your logic here, like showing a dialog or another UI component
+    // This method might trigger a UI that allows connecting this component to another
+  }
+}
 
 
 class RankineCycleCanvas extends StatefulWidget {
@@ -250,51 +254,28 @@ class ComponentModel {
   }
 }
 
-class ConnectionPointButton extends StatefulWidget {
+class ConnectionPointButton extends StatelessWidget {
   final IconData iconData;
-  final VoidCallback onTap;
+  final VoidCallback onTap; // Adjust if you need to pass more information on tap
+  final bool isHovered;
 
   const ConnectionPointButton({
     Key? key,
     required this.iconData,
     required this.onTap,
+    this.isHovered = false,
   }) : super(key: key);
 
   @override
-  _ConnectionPointButtonState createState() => _ConnectionPointButtonState();
-}
-
-class _ConnectionPointButtonState extends State<ConnectionPointButton> {
-  bool _isHovering = false;
-
-  @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (event) => setState(() => _isHovering = true),
-      onExit: (event) => setState(() => _isHovering = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 200),
-          decoration: BoxDecoration(
-            color: _isHovering ? Colors.green : Colors.blue, // Change color on hover
-            shape: BoxShape.circle,
-            boxShadow: _isHovering
-                ? [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.5),
-                spreadRadius: 2,
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
-            ]
-                : [],
-          ),
-          child: Icon(
-            widget.iconData,
-            size: 20,
-            color: Colors.white,
-          ),
+    return GestureDetector(
+      onTap: onTap,
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: Icon(
+          iconData,
+          size: 20,
+          color: isHovered ? Colors.green : Colors.blue,
         ),
       ),
     );
