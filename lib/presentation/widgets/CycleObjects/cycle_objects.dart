@@ -24,5 +24,3 @@ class ComponentWidget extends StatelessWidget {
 }
 
 
-
-
