@@ -48,7 +48,6 @@ dependencies:
 #  fluent_ui: ^4.8.6
 #  fluentui_system_icons: ^1.1.229
 #  fluentui_icons: ^1.0.0
-
 dev_dependencies:
   flutter_test:
     sdk: flutter

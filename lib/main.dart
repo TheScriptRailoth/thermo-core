@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 void main() => runApp(const MyApp());
@@ -357,6 +358,7 @@ class ComponentSidebar extends StatelessWidget {
                     position: Offset.zero,
                   ),
                   feedback: Material(
+                    borderRadius: BorderRadius.circular(10),
                     child: ComponentWidget(
                       component: ComponentModel(
                         id: 'feedback-${components[index]}',
@@ -372,7 +374,21 @@ class ComponentSidebar extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        SvgPicture.asset(components[index], width: 100, height: 100),
+                        Card(
+                          elevation: 0.0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: (){},
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                                child: SvgPicture.asset(components[index], width: 100, height: 100)
+                            ),
+                          ),
+                        ),
                         Text(componentsTitle[index], style: const TextStyle(fontWeight: FontWeight.bold)),
                       ],
                     ),
