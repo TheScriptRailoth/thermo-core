@@ -87,7 +87,8 @@ class ComponentWidget extends StatefulWidget {
   _ComponentWidgetState createState() => _ComponentWidgetState();
 }
 class _ComponentWidgetState extends State<ComponentWidget> {
-  bool _isHovered = false;
+  bool _isHoveredIcon = false;
+  bool _isHoveredNode = false;
 
   @override
   Widget build(BuildContext context) {
@@ -112,8 +113,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             child: InkWell(
               onTap: () => widget.onSelect(widget.component),
               child: MouseRegion(
-                onEnter: (_) => setState(() => _isHovered = true),
-                onExit: (_) => setState(() => _isHovered = false),
+                onEnter: (_) => setState(() => _isHoveredIcon = true),
+                onExit: (_) => setState(() => _isHoveredIcon = false),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   width: 50,
@@ -121,7 +122,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   decoration: BoxDecoration(
                     color: Colors.transparent,
                     border: Border.all(
-                      color: _isHovered || widget.isSelected ? Colors.blue : Colors.transparent,
+                      color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
                       width: 2,
                     ),
                     borderRadius: BorderRadius.circular(8),
@@ -143,17 +144,27 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           ),
           ...connectionPoints.keys.map((key) {
             Offset point = connectionPoints[key]!;
-            // Make sure the positioning logic here correctly places the connection points
-            // relative to the component's position on the canvas
             return Positioned(
               left: point.dx,
               top: point.dy,
-              child: Container(
-                width: 10, // Connection point size
-                height: 10,
-                decoration: BoxDecoration(
-                  color: Colors.red, // Bright color for visibility
-                  shape: BoxShape.circle,
+              child: InkWell(
+                onTap: (){},
+                child: MouseRegion(
+                  onEnter: (_)=>setState(() {
+                    _isHoveredNode=true;
+                  }),
+                  onExit: (_)=> setState(() {
+                    _isHoveredNode = false;
+                  }),
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: _isHoveredNode?Colors.green:Colors.red,
+                      shape: BoxShape.circle,
+                      border: Border.all(width: 1,color: _isHoveredNode?Colors.black:Colors.transparent)
+                    ),
+                  ),
                 ),
               ),
             );
@@ -201,7 +212,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   void _deleteComponent(ComponentModel component) {
     setState(() {
       placedComponents.removeWhere((item) => item.id == component.id);
-      // Optionally, also remove any connections associated with this component
       connections.removeWhere((connection) => connection.startComponentId == component.id || connection.endComponentId == component.id);
     });
   }
