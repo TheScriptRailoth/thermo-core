@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
 void main() => runApp(const MyApp());
 GlobalKey<_RankineCycleCanvasState> rankineCanvasKey = GlobalKey();
@@ -83,68 +85,79 @@ class ComponentWidget extends StatefulWidget {
   _ComponentWidgetState createState() => _ComponentWidgetState();
 }
 class _ComponentWidgetState extends State<ComponentWidget> {
+  final entries = <ContextMenuEntry>[
+    MenuItem(
+      label: 'Delete',
+      icon: Icons.delete,
+      onSelected: () {
+        // Code to delete the component
+      },
+    ),
+  ];
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     // Calculate the positions of connection points relative to the component's position
     var connectionPoints = widget.component.connectionPoints;
-
-    return Card(
-      elevation: 0.0,
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => widget.onSelect(widget.component),
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _isHovered = true),
-          onExit: (_) => setState(() => _isHovered = false),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  border: Border.all(
-                    color: _isHovered || widget.isSelected ? Colors.blue : Colors.transparent,
-                    width: 2,
+    return ContextMenuRegion(
+      contextMenu: ContextMenu(entries: entries),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Card(
+            elevation: 0.0,
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => widget.onSelect(widget.component),
+              child: MouseRegion(
+                onEnter: (_) => setState(() => _isHovered = true),
+                onExit: (_) => setState(() => _isHovered = false),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    border: Border.all(
+                      color: _isHovered || widget.isSelected ? Colors.blue : Colors.transparent,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Center(
-                    child: SvgPicture.asset(
-                      widget.component.type,
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.fill,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Center(
+                      child: SvgPicture.asset(
+                        widget.component.type,
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.fill,
+                      ),
                     ),
                   ),
                 ),
               ),
-              ...connectionPoints.keys.map((key) {
-                Offset point = connectionPoints[key]!;
-                // Make sure the positioning logic here correctly places the connection points
-                // relative to the component's position on the canvas
-                return Positioned(
-                  left: point.dx,
-                  top: point.dy,
-                  child: Container(
-                    width: 10, // Connection point size
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: Colors.red, // Bright color for visibility
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ],
+            ),
           ),
-        ),
+          ...connectionPoints.keys.map((key) {
+            Offset point = connectionPoints[key]!;
+            // Make sure the positioning logic here correctly places the connection points
+            // relative to the component's position on the canvas
+            return Positioned(
+              left: point.dx,
+              top: point.dy,
+              child: Container(
+                width: 10, // Connection point size
+                height: 10,
+                decoration: BoxDecoration(
+                  color: Colors.red, // Bright color for visibility
+                  shape: BoxShape.circle,
+                ),
+              ),
+            );
+          }).toList(),
+        ],
       ),
     );
   }
@@ -439,8 +452,8 @@ class ComponentModel {
   void updateConnectionPoints() {
     // Assuming the component is 50px wide and the desired offset for connection points is directly on its edges
     connectionPoints = {
-      'left': Offset(-10, 20), // 25 is half the height, making it vertically centered on the left
-      'right': Offset(50, 20), // 50 is the width of the component, making it right-edge centered
+      'left': Offset(-5, 25), // 25 is half the height, making it vertically centered on the left
+      'right': Offset(53, 25), // 50 is the width of the component, making it right-edge centered
     };
   }
 }
