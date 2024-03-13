@@ -1,15 +1,15 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-
-void main() => runApp(MyApp());
+void main() => runApp(const MyApp());
 GlobalKey<_RankineCycleCanvasState> rankineCanvasKey = GlobalKey();
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: Scaffold(body: HomeScreen()),
     );
   }
@@ -21,16 +21,24 @@ class HomeScreen extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
-
 class _HomeScreenState extends State<HomeScreen> {
+  String? _selectedComponentId;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Row(
         children: [
-          ComponentSidebar(),
+          ComponentSidebar(selectedComponentId: _selectedComponentId),
           SizedBox(width: 20),
-          Expanded(child: RankineCycleCanvas()),
+          Expanded(
+            child: RankineCycleCanvas(
+              onComponentSelected: (id) {
+                setState(() {
+                  _selectedComponentId = id;
+                });
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -44,7 +52,7 @@ class GridPainter extends CustomPainter {
       ..color = Colors.grey.withOpacity(0.5)
       ..strokeCap = StrokeCap.round;
 
-    const double gridCellSize = 40;
+    const double gridCellSize = 20;
     const double dotRadius = 2;
 
     for (double x = 0; x < size.width; x += gridCellSize) {
@@ -58,71 +66,97 @@ class GridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class ComponentWidget extends StatelessWidget {
+class ComponentWidget extends StatefulWidget {
   final ComponentModel component;
+  final Function(ComponentModel) onSelect;
+  final bool isSelected;
 
-  ComponentWidget({Key? key, required this.component}) : super(key: key);
+  const ComponentWidget({
+    Key? key,
+    required this.component,
+    required this.onSelect,
+    this.isSelected=false,
+  }) : super(key: key);
+
+  @override
+  _ComponentWidgetState createState() => _ComponentWidgetState();
+}
+class _ComponentWidgetState extends State<ComponentWidget> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          width: 50,
-          height: 50,
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: SvgPicture.asset(component.type, width: 50, height: 50, fit: BoxFit.fill,),
+    // Calculate the positions of connection points relative to the component's position
+    var connectionPoints = widget.component.connectionPoints;
+
+    return Card(
+      elevation: 0.0,
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => widget.onSelect(widget.component),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHovered = true),
+          onExit: (_) => setState(() => _isHovered = false),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                  border: Border.all(
+                    color: _isHovered || widget.isSelected ? Colors.blue : Colors.transparent,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: Center(
+                    child: SvgPicture.asset(
+                      widget.component.type,
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.fill,
+                    ),
+                  ),
+                ),
+              ),
+              ...connectionPoints.keys.map((key) {
+                Offset point = connectionPoints[key]!;
+                // Make sure the positioning logic here correctly places the connection points
+                // relative to the component's position on the canvas
+                return Positioned(
+                  left: point.dx,
+                  top: point.dy,
+                  child: Container(
+                    width: 10, // Connection point size
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.red, // Bright color for visibility
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ],
           ),
         ),
-        // Pass `context` to `_buildConnectionPoints`
-        ..._buildConnectionPoints(context),
-      ],
+      ),
     );
-  }
-
-  List<Widget> _buildConnectionPoints(BuildContext context) {
-    return component.connectionPoints.keys.map((key) {
-      return Positioned(
-        left: component.connectionPoints[key]!.dx - 10,
-        top: component.connectionPoints[key]!.dy - 10,
-        child: GestureDetector(
-          onTap: () {
-            // Call `startConnection` with the correct parameters
-            rankineCanvasKey.currentState?.startConnection(component, key);
-          },
-          child: Container(
-            width: 10,
-            height: 10,
-            decoration: BoxDecoration(
-              color: Colors.green,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ),
-      );
-    }).toList();
-  }
-
-
-  void _onConnectionPointTap(BuildContext context, String pointKey, ComponentModel component) {
-    // Implement your logic here, like showing a dialog or another UI component
-    // This method might trigger a UI that allows connecting this component to another
   }
 }
 
 
 class RankineCycleCanvas extends StatefulWidget {
-  RankineCycleCanvas({Key? key}) : super(key: rankineCanvasKey);
+  final Function(String?)? onComponentSelected;
+  RankineCycleCanvas({Key? key, this.onComponentSelected}) : super(key: key);
   @override
 
   _RankineCycleCanvasState createState() => _RankineCycleCanvasState();
 }
-
 class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   List<ComponentModel> placedComponents = [];
   List<Connection> connections = [];
@@ -133,11 +167,28 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   Offset? tempConnectionEnd;
   Offset? lastDragPosition;
 
+  ComponentModel ?selectedComponent;
+
+  void _selectComponent(ComponentModel component) {
+    setState(() {
+      // Deselect all components
+      for (var comp in placedComponents) {
+        comp.isSelected = false;
+      }
+      // Select the tapped component
+      component.isSelected = true;
+      selectedComponent = component; // This is optional depending on your implementation
+      print('Selected component: ${component.id}');
+      // selectedComponentId = component.id;
+    });
+    widget.onComponentSelected?.call(component.id);
+  }
+
   void startConnection(ComponentModel component, String connectionPointKey) {
     final Offset startPoint = component.connectionPoints[connectionPointKey]!;
     setState(() {
       tempConnectionStart = startPoint;
-      tempConnectionEnd = startPoint; // Initialize to the start position
+      tempConnectionEnd = startPoint;
     });
   }
 
@@ -161,16 +212,24 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 
   final GlobalKey _canvasKey = GlobalKey();
 
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      onTap: (){
+        if(selectedComponent!=null){
+          setState(() {
+            for(var comp in placedComponents){
+              comp.isSelected=false;
+              widget.onComponentSelected?.call(null);
+            }
+          });
+        }
+      },
       onPanUpdate: (details) {
         lastDragPosition = details.localPosition;
         updateTemporaryConnection(details.localPosition);
       },
       onPanEnd: (details) {
-        // Here, implement logic to determine the endComponentId based on the location
         if (lastDragPosition != null) {
           completeConnection(lastDragPosition!, "startComponentId", "endComponentId");
           lastDragPosition = null; // Reset the position
@@ -181,16 +240,16 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
           foregroundPainter: ConnectionLinePainter(connections, tempConnectionStart, tempConnectionEnd),
           child: DragTarget<ComponentModel>(
             onWillAccept: (data) => true,
-            onAcceptWithDetails: (details) {
-              final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-              final Offset localOffset = renderBox.globalToLocal(details.offset);
-
-              setState(() {
-                ComponentModel component = details.data..position = localOffset - const Offset(200, 0);
-                component.updateConnectionPoints();
-                placedComponents.add(component);
-              });
-            },
+              // In your RankineCycleCanvas widget, inside the onAcceptWithDetails method
+              onAcceptWithDetails: (details) {
+                final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+                final Offset localOffset = renderBox.globalToLocal(details.offset);
+                setState(() {
+                  ComponentModel component = details.data..position = localOffset;
+                  component.updateConnectionPoints(); // Recalculate connection points based on new position
+                  placedComponents.add(component);
+                });
+              },
             builder: (context, candidateData, rejectedData) {
               return Container(
                 key: _canvasKey,
@@ -202,98 +261,49 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                       return Positioned(
                         left: component.position.dx,
                         top: component.position.dy,
-                        child: Draggable<ComponentModel>(
-                          data: component,
-                          feedback: Material(
-                            elevation: 4.0,
-                            child: ComponentWidget(component: component),
-                          ),
-                          childWhenDragging: Opacity(
-                            opacity: 0.5,
-                            child: ComponentWidget(component: component),
-                          ),
-                          onDragEnd: (dragDetails) {
-                            final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-                            final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
-
+                        child: GestureDetector(
+                          onTap: () {
                             setState(() {
-                              component.position = Offset(
-                                max(0, localOffsetCanvas.dx),
-                                max(0, localOffsetCanvas.dy),
-                              );
-                              component.updateConnectionPoints();
+                              _selectComponent(component);
                             });
                           },
-                          child: ComponentWidget(component: component),
+                          child: Draggable<ComponentModel>(
+                            data: component,
+                            feedback: Material(
+                              elevation: 4.0,
+                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,),
+                            ),
+                            childWhenDragging: Opacity(
+                              opacity: 0.5,
+                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,),
+                            ),
+                            // Inside the onDragEnd or similar method
+                            onDragEnd: (dragDetails) {
+                              final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+                              final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
+
+                              setState(() {
+                                component.position = Offset(
+                                  max(0, localOffsetCanvas.dx - (50 / 2)), // Adjust based on component's width for centering
+                                  max(0, localOffsetCanvas.dy - (50/ 2)), // Adjust based on component's height for centering
+                                );
+                                component.updateConnectionPoints(); // Recalculate connection points based on new position
+                              });
+                            },
+                            child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,),
+                          ),
                         ),
                       );
                     }).toList(),
                   ),
                 ),
+
               );
             },
           )
       ),
     );
   }
-
-  // @override
-  // Widget build(BuildContext context) {
-  //   return DragTarget<ComponentModel>(
-  //     onWillAccept: (data) => true,
-  //     onAcceptWithDetails: (details) {
-  //       final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-  //       final Offset localOffset = renderBox.globalToLocal(details.offset);
-  //
-  //       setState(() {
-  //         ComponentModel component = details.data..position = localOffset - const Offset(200, 0);
-  //         component.updateConnectionPoints();
-  //         placedComponents.add(component);
-  //       });
-  //     },
-  //     builder: (context, candidateData, rejectedData) {
-  //       return Container(
-  //         key: _canvasKey,
-  //         color: Colors.white,
-  //         child: CustomPaint(
-  //           painter: GridPainter(),
-  //           child: Stack(
-  //             children: placedComponents.map((component) {
-  //               return Positioned(
-  //                 left: component.position.dx,
-  //                 top: component.position.dy,
-  //                 child: Draggable<ComponentModel>(
-  //                   data: component,
-  //                   feedback: Material(
-  //                     elevation: 4.0,
-  //                     child: ComponentWidget(component: component),
-  //                   ),
-  //                   childWhenDragging: Opacity(
-  //                     opacity: 0.5,
-  //                     child: ComponentWidget(component: component),
-  //                   ),
-  //                   onDragEnd: (dragDetails) {
-  //                     final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-  //                     final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
-  //
-  //                     setState(() {
-  //                       component.position = Offset(
-  //                         max(0, localOffsetCanvas.dx),
-  //                         max(0, localOffsetCanvas.dy),
-  //                       );
-  //                       component.updateConnectionPoints();
-  //                     });
-  //                   },
-  //                   child: ComponentWidget(component: component),
-  //                 ),
-  //               );
-  //             }).toList(),
-  //           ),
-  //         ),
-  //       );
-  //     },
-  //   );
-  // }
 }
 
 class ComponentSidebar extends StatelessWidget {
@@ -304,43 +314,92 @@ class ComponentSidebar extends StatelessWidget {
     'lib/presentation/assets/water_pump_icon.svg',
   ];
   final List<String> componentsTitle = ['Turbine', "Boiler", "Precipitator", "Water Pump"];
+  final String? selectedComponentId;
 
+  ComponentSidebar({Key? key, this.selectedComponentId}) : super(key: key);
   @override
   Widget build(BuildContext context) {
+    void doNothing(ComponentModel component){}
     return Container(
-      width: 200,
+      width: 300,
       color: Colors.grey[200],
-      child: ListView.builder(
-        itemCount: components.length,
-        itemBuilder: (context, index) {
-          return Draggable<ComponentModel>(
-            data: ComponentModel(
-              id: UniqueKey().toString(),
-              type: components[index
+      child: Column(
+        children: [
+          Container(
+            height: 30,
+            width: 300,
+            color: Colors.grey,
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                SizedBox(width: 5,),
+                Text("Devices", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.left,),
               ],
-              position: Offset.zero,
             ),
-            feedback: Material(
-              child: ComponentWidget(
-                component: ComponentModel(
-                  id: 'feedback-${components[index]}',
-                  type: components[index],
-                  position: Offset.zero,
-                ),
+          ),
+          const SizedBox(height: 10,),
+          Flexible(
+            child: GridView.builder(
+              // The number of items in your grid
+              itemCount: components.length,
+              // Controls the layout of tiles in a grid
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2, // Number of columns
+                crossAxisSpacing: 1, // Spacing between columns
+                mainAxisSpacing: 10, // Spacing between rows
+                childAspectRatio: 1.0, // Aspect ratio of the tiles
               ),
-              elevation: 4.0,
+              itemBuilder: (context, index) {
+                return Draggable<ComponentModel>(
+                  data: ComponentModel(
+                    id: UniqueKey().toString(),
+                    type: components[index],
+                    position: Offset.zero,
+                  ),
+                  feedback: Material(
+                    child: ComponentWidget(
+                      component: ComponentModel(
+                        id: 'feedback-${components[index]}',
+                        type: components[index],
+                        position: Offset.zero,
+                      ),
+                      onSelect: doNothing,
+                    ),
+                    elevation: 4.0,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SvgPicture.asset(components[index], width: 100, height: 100),
+                        Text(componentsTitle[index], style: const TextStyle(fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
+          ),
+          SizedBox(height: 20,),
+          Container(
+            color: Colors.greenAccent,
+            width: 300,
+            child: SingleChildScrollView(
               child: Column(
                 children: [
-                  SvgPicture.asset(components[index], width: 48, height: 48),
-                  Text(componentsTitle[index], style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      Text("Device Name : "),
+                      Text(selectedComponentId != null ? selectedComponentId! : "None selected"),
+                    ],
+                  )
                 ],
               ),
             ),
-          );
-        },
+          )
+
+        ],
       ),
     );
   }
@@ -351,6 +410,7 @@ class ComponentModel {
   final String type;
   Offset position;
   Map<String, Offset> connectionPoints;
+  bool isSelected = false;
 
   ComponentModel({
     required this.id,
@@ -361,11 +421,10 @@ class ComponentModel {
   }
 
   void updateConnectionPoints() {
+    // Assuming the component is 50px wide and the desired offset for connection points is directly on its edges
     connectionPoints = {
-      'left': Offset(0, 30),
-      'right': Offset(60, 30),
-      // 'top': Offset(30, 0),
-      // 'bottom': Offset(30, 60),
+      'left': Offset(-10, 20), // 25 is half the height, making it vertically centered on the left
+      'right': Offset(50, 20), // 50 is the width of the component, making it right-edge centered
     };
   }
 }
@@ -434,131 +493,4 @@ class Connection {
   Connection({required this.startComponentId, required this.endComponentId, required this.startPosition, required this.endPosition});
 }
 
-//
-// import 'package:flutter/material.dart';
-//
-// void main() => runApp(MyApp());
-//
-// class MyApp extends StatelessWidget {
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       home: Scaffold(
-//         body: Center(
-//           child: InteractiveCanvas(),
-//         ),
-//       ),
-//     );
-//   }
-// }
-//
-// class Node {
-//   Offset position;
-//
-//   Node(this.position);
-// }
-//
-// class Connection {
-//   Node start;
-//   Node end;
-//
-//   Connection(this.start, this.end);
-// }
-//
-// class InteractiveCanvas extends StatefulWidget {
-//   @override
-//   _InteractiveCanvasState createState() => _InteractiveCanvasState();
-// }
-//
-// class _InteractiveCanvasState extends State<InteractiveCanvas> {
-//   List<Node> nodes = [];
-//   List<Connection> connections = [];
-//   Node? tempStartNode; // Temporary start node for a connection being drawn
-//   Offset? lastPosition; // Tracks the last known position during a pan
-//
-//   void _handleTapUp(TapUpDetails details) {
-//     setState(() {
-//       nodes.add(Node(details.localPosition));
-//     });
-//   }
-//
-//   void _handlePanStart(DragStartDetails details) {
-//     final startNode = _findNodeNearPoint(details.localPosition);
-//     if (startNode != null) {
-//       tempStartNode = startNode;
-//     }
-//   }
-//
-//   void _handlePanUpdate(DragUpdateDetails details) {
-//     // Update the last known position
-//     setState(() {
-//       lastPosition = details.localPosition;
-//     });
-//   }
-//
-//   void _handlePanEnd(DragEndDetails details) {
-//     if (tempStartNode != null && lastPosition != null) {
-//       final endNode = _findNodeNearPoint(lastPosition!);
-//       if (endNode != null && endNode != tempStartNode) {
-//         setState(() {
-//           connections.add(Connection(tempStartNode!, endNode));
-//         });
-//       }
-//     }
-//     tempStartNode = null; // Reset temporary start node
-//     lastPosition = null; // Reset the last known position
-//   }
-//
-//   Node? _findNodeNearPoint(Offset point) {
-//     for (var node in nodes) {
-//       if ((node.position - point).distance < 20.0) { // 20.0 is the tolerance radius
-//         return node;
-//       }
-//     }
-//     return null;
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTapUp: _handleTapUp,
-//       onPanStart: _handlePanStart,
-//       onPanUpdate: _handlePanUpdate,
-//       onPanEnd: _handlePanEnd,
-//       child: CustomPaint(
-//         size: Size.infinite,
-//         painter: CanvasPainter(nodes, connections),
-//       ),
-//     );
-//   }
-// }
-//
-// class CanvasPainter extends CustomPainter {
-//   final List<Node> nodes;
-//   final List<Connection> connections;
-//
-//   CanvasPainter(this.nodes, this.connections);
-//
-//   @override
-//   void paint(Canvas canvas, Size size) {
-//     final paint = Paint()
-//       ..color = Colors.blue
-//       ..strokeWidth = 4
-//       ..style = PaintingStyle.stroke;
-//
-//     // Draw connections
-//     for (var connection in connections) {
-//       canvas.drawLine(connection.start.position, connection.end.position, paint);
-//     }
-//
-//     // Draw nodes
-//     for (var node in nodes) {
-//       canvas.drawCircle(node.position, 10.0, paint);
-//     }
-//   }
-//
-//   @override
-//   bool shouldRepaint(covariant CustomPainter oldDelegate) {
-//     return true; // In a real app, this should be optimized to repaint only when necessary.
-//   }
-// }
+
