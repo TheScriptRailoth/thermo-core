@@ -72,6 +72,7 @@ class GridPainter extends CustomPainter {
 class ComponentWidget extends StatefulWidget {
   final ComponentModel component;
   final Function(ComponentModel) onSelect;
+  final Function(ComponentModel) onDelete;
   final bool isSelected;
 
   const ComponentWidget({
@@ -79,26 +80,26 @@ class ComponentWidget extends StatefulWidget {
     required this.component,
     required this.onSelect,
     this.isSelected=false,
+    required this.onDelete,
   }) : super(key: key);
 
   @override
   _ComponentWidgetState createState() => _ComponentWidgetState();
 }
 class _ComponentWidgetState extends State<ComponentWidget> {
-  final entries = <ContextMenuEntry>[
-    MenuItem(
-      label: 'Delete',
-      icon: Icons.delete,
-      onSelected: () {
-        // Code to delete the component
-      },
-    ),
-  ];
   bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
-    // Calculate the positions of connection points relative to the component's position
+    final entries = <ContextMenuEntry>[
+      MenuItem(
+        label: 'Delete',
+        icon: Icons.delete,
+        onSelected: () {
+          widget.onDelete(widget.component);
+        },
+      ),
+    ];
     var connectionPoints = widget.component.connectionPoints;
     return ContextMenuRegion(
       contextMenu: ContextMenu(entries: entries),
@@ -197,6 +198,13 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     });
     widget.onComponentSelected?.call(component.id);
   }
+  void _deleteComponent(ComponentModel component) {
+    setState(() {
+      placedComponents.removeWhere((item) => item.id == component.id);
+      // Optionally, also remove any connections associated with this component
+      connections.removeWhere((connection) => connection.startComponentId == component.id || connection.endComponentId == component.id);
+    });
+  }
 
   void startConnection(ComponentModel component, String connectionPointKey) {
     final Offset startPoint = component.connectionPoints[connectionPointKey]!;
@@ -285,11 +293,11 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                             data: component,
                             feedback: Material(
                               elevation: 4.0,
-                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,),
+                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected, onDelete: _deleteComponent,),
                             ),
                             childWhenDragging: Opacity(
                               opacity: 0.5,
-                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,),
+                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
                             ),
                             // Inside the onDragEnd or similar method
                             onDragEnd: (dragDetails) {
@@ -304,7 +312,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                                 component.updateConnectionPoints(); // Recalculate connection points based on new position
                               });
                             },
-                            child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,),
+                            child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
                           ),
                         ),
                       );
@@ -379,6 +387,7 @@ class ComponentSidebar extends StatelessWidget {
                         position: Offset.zero,
                       ),
                       onSelect: doNothing,
+                      onDelete: doNothing,
                     ),
                     elevation: 4.0,
                   ),
