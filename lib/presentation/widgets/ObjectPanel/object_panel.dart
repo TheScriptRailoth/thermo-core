@@ -2,7 +2,7 @@
 // import 'package:flutter_svg/svg.dart';
 //
 // import '../../../main.dart';
-// import '../../../models/component_model.dart';
+// import '../../../models/cycle_components_model.dart';
 //
 // class ComponentSidebar extends StatelessWidget {
 //   final List<String> components = ['lib/presentation/assets/turbine_icon.svg', 'lib/presentation/assets/boiler_icon.svg', 'lib/presentation/assets/precipitator_icon.svg', 'lib/presentation/assets/water_pump_icon.svg'];

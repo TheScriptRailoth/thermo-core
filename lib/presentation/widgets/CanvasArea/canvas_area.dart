@@ -2,7 +2,7 @@
 // import 'package:flutter/material.dart';
 // import '../../../core/utils/grid_painter.dart';
 // import '../../../main.dart';
-// import '../../../models/component_model.dart';
+// import '../../../models/cycle_components_model.dart';
 // import '../CycleObjects/cycle_objects.dart';
 // class RankineCycleCanvas extends StatefulWidget {
 //   @override
