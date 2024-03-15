@@ -16,56 +16,185 @@ Offset snapToGrid(Offset position) {
 }
 
 String? _selectedComponentId;
+
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
+
 class _HomeScreenState extends State<HomeScreen> {
-  ComponentModel? _selectedComponent;
 
-  void _selectComponent(ComponentModel component) {
+  ComponentModel? selectedComponent;
+  bool isEditingPanelVisible = false;
+
+  void _toggleEditPanel() {
     setState(() {
-      _selectedComponent = component;
+      isEditingPanelVisible = !isEditingPanelVisible;
     });
-    _openEditDrawer();
   }
 
-  void _openEditDrawer() {
-    Scaffold.of(context).openEndDrawer();
-  }
-
-  void _deselectComponent() {
-    setState(() {
-      _selectedComponent = null;
-    });
-    Navigator.of(context).pop(); // Close the drawer when the component is deselected
-  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
+      appBar: AppBar(
+        title: Text("Modeling Software"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: _toggleEditPanel,
+          ),
+        ],
+      ),
+      body: Stack(
         children: [
-          ComponentSidebar(selectedComponentId: _selectedComponentId),
-          SizedBox(width: 20),
-          Expanded(
-            child: RankineCycleCanvas(
-              onComponentSelected: (id) {
-                setState(() {
-                  _selectedComponentId = id;
-                });
-              },
+          // Main content
+          Center(
+            child: Text("Main content goes here"),
+          ),
+          AnimatedPositioned(
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            right: isEditingPanelVisible ? 0 : -300, // Slide in and out
+            top: 0,
+            bottom: 0,
+            child: Container(
+              width: 300,
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        icon: Icon(Icons.close),
+                        onPressed: _toggleEditPanel,
+                      ),
+                    ),
+                    Text(
+                      'Edit Component Properties',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    // Add your form fields or other widgets here
+                    Expanded(
+                      child: TurbineEditPanel(turbine: t)
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Perform save operation
+                        _toggleEditPanel();
+                      },
+                      child: Text('Save Changes'),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
       ),
-      endDrawer: _selectedComponent != null ? Drawer(
-        child: ComponentEditPanel(selectedComponent: _selectedComponent),
-      ) : null,
     );
   }
 }
+
+// class HomeScreen extends StatefulWidget {
+//   static ComponentModel? _selectedComponent;
+//
+//
+//   const HomeScreen({super.key});
+//   @override
+//   State<HomeScreen> createState() => _HomeScreenState();
+// }
+// class _HomeScreenState extends State<HomeScreen> {
+//   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+//   void _openEditDrawer() {
+//     Scaffold.of(context).openDrawer();
+//   }
+//
+//   void _deselectComponent() {
+//     Navigator.of(context).pop(); // Close the drawer when the component is deselected
+//   }
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(),
+//       body: Row(
+//         children: [
+//           ComponentSidebar(selectedComponentId: _selectedComponentId),
+//           SizedBox(width: 20),
+//           Expanded(
+//             child: RankineCycleCanvas(
+//               onComponentSelected: (id) {
+//                 setState(() {
+//                   _selectedComponentId = id;
+//                 });
+//               },
+//             ),
+//           ),
+//         ],
+//       ),
+//       drawer: Drawer(
+//         child: ListView(
+//           padding: EdgeInsets.zero,
+//           children: [
+//             DrawerHeader(
+//               decoration: BoxDecoration(
+//                 color: Colors.blue,
+//               ),
+//               child: Text(
+//                 'Drawer Header',
+//                 style: TextStyle(
+//                   color: Colors.white,
+//                   fontSize: 24,
+//                 ),
+//               ),
+//             ),
+//             ListTile(
+//               leading: Icon(Icons.message),
+//               title: Text('Messages'),
+//               onTap: () {
+//                 // Update the state of the app
+//                 // ...
+//                 // Then close the drawer
+//                 Navigator.pop(context);
+//               },
+//             ),
+//             ListTile(
+//               leading: Icon(Icons.account_circle),
+//               title: Text('Profile'),
+//               onTap: () {
+//                 // Update the state of the app
+//                 // ...
+//                 // Then close the drawer
+//                 Navigator.pop(context);
+//               },
+//             ),
+//             ListTile(
+//               leading: Icon(Icons.settings),
+//               title: Text('Settings'),
+//               onTap: () {
+//                 // Update the state of the app
+//                 // ...
+//                 // Then close the drawer
+//                 Navigator.pop(context);
+//               },
+//             ),
+//           ],
+//         ),
+//       ),
+//       endDrawer: _selectedComponentId != "None selected" ? Drawer(
+//         child: Container(
+//           height: 200,
+//           width: 200,
+//           child: Text("askdjhk"),
+//         )
+//       ) : null,
+//     );
+//   }
+// }
 
 class GridPainter extends CustomPainter {
   double gridCellSize = 20.0;
@@ -195,169 +324,169 @@ class _ComponentWidgetState extends State<ComponentWidget> {
 }
 
 
-class RankineCycleCanvas extends StatefulWidget {
-  final Function(String?)? onComponentSelected;
-  RankineCycleCanvas({Key? key, this.onComponentSelected}) : super(key: key);
-  @override
-
-  _RankineCycleCanvasState createState() => _RankineCycleCanvasState();
-}
-class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
-  List<ComponentModel> placedComponents = [];
-  List<Connection> connections = [];
-  ComponentModel? currentStartComponent;
-  Offset? temporaryEndPosition;
-
-  Offset? tempConnectionStart;
-  Offset? tempConnectionEnd;
-  Offset? lastDragPosition;
-
-  ComponentModel ?selectedComponent;
-
-  void _selectComponent(ComponentModel component) {
-    setState(() {
-      // Deselect all components
-      for (var comp in placedComponents) {
-        comp.isSelected = false;
-      }
-      // Select the tapped component
-      component.isSelected = true;
-      selectedComponent = component;
-      print('Selected component: ${component.id}');
-      _open
-    });
-    widget.onComponentSelected?.call(component.id);
-  }
-  void _deleteComponent(ComponentModel component) {
-    setState(() {
-      placedComponents.removeWhere((item) => item.id == component.id);
-      connections.removeWhere((connection) => connection.startComponentId == component.id || connection.endComponentId == component.id);
-    });
-  }
-
-  void startConnection(ComponentModel component, String connectionPointKey) {
-    final Offset startPoint = component.connectionPoints[connectionPointKey]!;
-    setState(() {
-      tempConnectionStart = startPoint;
-      tempConnectionEnd = startPoint;
-    });
-  }
-
-  void updateTemporaryConnection(Offset newPosition) {
-    setState(() {
-      tempConnectionEnd = newPosition;
-    });
-  }
-
-  void completeConnection(Offset end, String startComponentId, String endComponentId) {
-    setState(() {
-      connections.add(Connection(
-          startComponentId: startComponentId,
-          endComponentId: endComponentId,
-          startPosition: tempConnectionStart!,
-          endPosition: end));
-      tempConnectionStart = null;
-      tempConnectionEnd = null;
-    });
-  }
-
-  final GlobalKey _canvasKey = GlobalKey();
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: (){
-        if(selectedComponent!=null){
-          setState(() {
-            for(var comp in placedComponents){
-              comp.isSelected=false;
-              widget.onComponentSelected?.call(null);
-            }
-          });
-        }
-      },
-      onPanUpdate: (details) {
-        lastDragPosition = details.localPosition;
-        updateTemporaryConnection(details.localPosition);
-      },
-      onPanEnd: (details) {
-        if (lastDragPosition != null) {
-          completeConnection(lastDragPosition!, "startComponentId", "endComponentId");
-          lastDragPosition = null; // Reset the position
-        }
-      },
-      child: CustomPaint(
-          painter: GridPainter(),
-          foregroundPainter: ConnectionLinePainter(connections, tempConnectionStart, tempConnectionEnd),
-          child: DragTarget<ComponentModel>(
-            onWillAccept: (data) => true,
-            // In your RankineCycleCanvas widget, inside the onAcceptWithDetails method
-            onAcceptWithDetails: (details) {
-              final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-              final Offset localOffset = renderBox.globalToLocal(details.offset);
-              final Offset snappedPosition = snapToGrid(localOffset); // Snap the position
-
-              setState(() {
-                ComponentModel component = details.data..position = snappedPosition;
-                component.updateConnectionPoints(); // Optionally adjust connection points here
-                placedComponents.add(component);
-              });
-            },
-
-            builder: (context, candidateData, rejectedData) {
-              return Container(
-                key: _canvasKey,
-                color: Colors.white,
-                child: CustomPaint(
-                  painter: GridPainter(),
-                  child: Stack(
-                    children: placedComponents.map((component) {
-                      return Positioned(
-                        left: component.position.dx,
-                        top: component.position.dy,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectComponent(component);
-                            });
-                          },
-                          child: Draggable<ComponentModel>(
-                            data: component,
-                            feedback: Material(
-                              elevation: 4.0,
-                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected, onDelete: _deleteComponent,),
-                            ),
-                            childWhenDragging: Opacity(
-                              opacity: 0.5,
-                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
-                            ),
-                            // Inside the onDragEnd or similar method
-                            onDragEnd: (dragDetails) {
-                              final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-                              final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
-                              final Offset snappedPosition = snapToGrid(localOffsetCanvas - Offset(50 / 2, 50 / 2)); // Adjust for component's size if necessary
-
-                              setState(() {
-                                component.position = snappedPosition;
-                                component.updateConnectionPoints(); // Recalculate connection points based on new position
-                              });
-                            },
-
-                            child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-
-              );
-            },
-          )
-      ),
-    );
-  }
-}
+// class RankineCycleCanvas extends StatefulWidget {
+//   final Function(String?)? onComponentSelected;
+//   RankineCycleCanvas({Key? key, this.onComponentSelected}) : super(key: key);
+//   @override
+//
+//   _RankineCycleCanvasState createState() => _RankineCycleCanvasState();
+// }
+// class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
+//   List<ComponentModel> placedComponents = [];
+//   List<Connection> connections = [];
+//   ComponentModel? currentStartComponent;
+//   Offset? temporaryEndPosition;
+//
+//   Offset? tempConnectionStart;
+//   Offset? tempConnectionEnd;
+//   Offset? lastDragPosition;
+//
+//   ComponentModel ?selectedComponent;
+//
+//   void _selectComponent(ComponentModel component) {
+//     setState(() {
+//       // Deselect all components
+//       for (var comp in placedComponents) {
+//         comp.isSelected = false;
+//       }
+//       // Select the tapped component
+//       component.isSelected = true;
+//       selectedComponent = component;
+//       print('Selected component: ${component.id}');
+//       HomeScreen._selectedComponent= component;
+//     });
+//     widget.onComponentSelected?.call(component.id);
+//   }
+//   void _deleteComponent(ComponentModel component) {
+//     setState(() {
+//       placedComponents.removeWhere((item) => item.id == component.id);
+//       connections.removeWhere((connection) => connection.startComponentId == component.id || connection.endComponentId == component.id);
+//     });
+//   }
+//
+//   void startConnection(ComponentModel component, String connectionPointKey) {
+//     final Offset startPoint = component.connectionPoints[connectionPointKey]!;
+//     setState(() {
+//       tempConnectionStart = startPoint;
+//       tempConnectionEnd = startPoint;
+//     });
+//   }
+//
+//   void updateTemporaryConnection(Offset newPosition) {
+//     setState(() {
+//       tempConnectionEnd = newPosition;
+//     });
+//   }
+//
+//   void completeConnection(Offset end, String startComponentId, String endComponentId) {
+//     setState(() {
+//       connections.add(Connection(
+//           startComponentId: startComponentId,
+//           endComponentId: endComponentId,
+//           startPosition: tempConnectionStart!,
+//           endPosition: end));
+//       tempConnectionStart = null;
+//       tempConnectionEnd = null;
+//     });
+//   }
+//
+//   final GlobalKey _canvasKey = GlobalKey();
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDetector(
+//       onTap: (){
+//         if(selectedComponent!=null){
+//           setState(() {
+//             for(var comp in placedComponents){
+//               comp.isSelected=false;
+//               widget.onComponentSelected?.call(null);
+//             }
+//           });
+//         }
+//       },
+//       onPanUpdate: (details) {
+//         lastDragPosition = details.localPosition;
+//         updateTemporaryConnection(details.localPosition);
+//       },
+//       onPanEnd: (details) {
+//         if (lastDragPosition != null) {
+//           completeConnection(lastDragPosition!, "startComponentId", "endComponentId");
+//           lastDragPosition = null; // Reset the position
+//         }
+//       },
+//       child: CustomPaint(
+//           painter: GridPainter(),
+//           foregroundPainter: ConnectionLinePainter(connections, tempConnectionStart, tempConnectionEnd),
+//           child: DragTarget<ComponentModel>(
+//             onWillAccept: (data) => true,
+//             // In your RankineCycleCanvas widget, inside the onAcceptWithDetails method
+//             onAcceptWithDetails: (details) {
+//               final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+//               final Offset localOffset = renderBox.globalToLocal(details.offset);
+//               final Offset snappedPosition = snapToGrid(localOffset); // Snap the position
+//
+//               setState(() {
+//                 ComponentModel component = details.data..position = snappedPosition;
+//                 component.updateConnectionPoints(); // Optionally adjust connection points here
+//                 placedComponents.add(component);
+//               });
+//             },
+//
+//             builder: (context, candidateData, rejectedData) {
+//               return Container(
+//                 key: _canvasKey,
+//                 color: Colors.white,
+//                 child: CustomPaint(
+//                   painter: GridPainter(),
+//                   child: Stack(
+//                     children: placedComponents.map((component) {
+//                       return Positioned(
+//                         left: component.position.dx,
+//                         top: component.position.dy,
+//                         child: GestureDetector(
+//                           onTap: () {
+//                             setState(() {
+//                               _selectComponent(component);
+//                             });
+//                           },
+//                           child: Draggable<ComponentModel>(
+//                             data: component,
+//                             feedback: Material(
+//                               elevation: 4.0,
+//                               child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected, onDelete: _deleteComponent,),
+//                             ),
+//                             childWhenDragging: Opacity(
+//                               opacity: 0.5,
+//                               child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
+//                             ),
+//                             // Inside the onDragEnd or similar method
+//                             onDragEnd: (dragDetails) {
+//                               final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+//                               final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
+//                               final Offset snappedPosition = snapToGrid(localOffsetCanvas - Offset(50 / 2, 50 / 2)); // Adjust for component's size if necessary
+//
+//                               setState(() {
+//                                 component.position = snappedPosition;
+//                                 component.updateConnectionPoints(); // Recalculate connection points based on new position
+//                               });
+//                             },
+//
+//                             child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
+//                           ),
+//                         ),
+//                       );
+//                     }).toList(),
+//                   ),
+//                 ),
+//
+//               );
+//             },
+//           )
+//       ),
+//     );
+//   }
+// }
 
 class ComponentSidebar extends StatelessWidget {
   final List<String> components = [
@@ -697,6 +826,98 @@ class ComponentEditPanel extends StatelessWidget {
           child: Text('Save Changes'),
         ),
       ],
+    );
+  }
+}
+
+class TurbineEditPanel extends StatefulWidget {
+  final Turbine turbine;
+
+  const TurbineEditPanel({Key? key, required this.turbine}) : super(key: key);
+
+  @override
+  _TurbineEditPanelState createState() => _TurbineEditPanelState();
+}
+
+class _TurbineEditPanelState extends State<TurbineEditPanel> {
+  final _formKey = GlobalKey<FormState>();
+  late double _inletPressure;
+  late double _outletPressure;
+  late double _efficiency;
+
+  @override
+  void initState() {
+    super.initState();
+    _inletPressure = widget.turbine.inletPressure;
+    _outletPressure = widget.turbine.outletPressure;
+    _efficiency = widget.turbine.efficiency;
+  }
+
+  void _saveChanges() {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      // Assuming you have a method to update the turbine
+      // Update your turbine model here
+      print('Saving changes...');
+      // Close the panel or show a confirmation message
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 300.0, // Adjust as needed
+      padding: EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Edit Turbine Properties', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            TextFormField(
+              initialValue: _inletPressure.toString(),
+              decoration: InputDecoration(labelText: 'Inlet Pressure'),
+              keyboardType: TextInputType.number,
+              onSaved: (value) => _inletPressure = double.tryParse(value!) ?? _inletPressure,
+              validator: (value) {
+                if (value == null || double.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                return null;
+              },
+            ),
+            TextFormField(
+              initialValue: _outletPressure.toString(),
+              decoration: InputDecoration(labelText: 'Outlet Pressure'),
+              keyboardType: TextInputType.number,
+              onSaved: (value) => _outletPressure = double.tryParse(value!) ?? _outletPressure,
+              validator: (value) {
+                if (value == null || double.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                return null;
+              },
+            ),
+            TextFormField(
+              initialValue: _efficiency.toString(),
+              decoration: InputDecoration(labelText: 'Efficiency'),
+              keyboardType: TextInputType.number,
+              onSaved: (value) => _efficiency = double.tryParse(value!) ?? _efficiency,
+              validator: (value) {
+                if (value == null || double.tryParse(value) == null) {
+                  return 'Please enter a valid number';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _saveChanges,
+              child: Text('Save Changes'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
