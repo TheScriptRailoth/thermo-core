@@ -5,6 +5,16 @@ import 'package:flutter/services.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
 
+
+const double gridSize = 20.0; // Define this globally or within a class as a static constant
+
+// Snap an offset to the nearest grid point
+Offset snapToGrid(Offset position) {
+  double x = (position.dx / gridSize).round() * gridSize;
+  double y = (position.dy / gridSize).round() * gridSize;
+  return Offset(x, y);
+}
+
 String? _selectedComponentId;
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -13,6 +23,25 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 class _HomeScreenState extends State<HomeScreen> {
+  ComponentModel? _selectedComponent;
+
+  void _selectComponent(ComponentModel component) {
+    setState(() {
+      _selectedComponent = component;
+    });
+    _openEditDrawer();
+  }
+
+  void _openEditDrawer() {
+    Scaffold.of(context).openEndDrawer();
+  }
+
+  void _deselectComponent() {
+    setState(() {
+      _selectedComponent = null;
+    });
+    Navigator.of(context).pop(); // Close the drawer when the component is deselected
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,18 +60,22 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      endDrawer: _selectedComponent != null ? Drawer(
+        child: ComponentEditPanel(selectedComponent: _selectedComponent),
+      ) : null,
     );
   }
 }
 
 class GridPainter extends CustomPainter {
+  double gridCellSize = 20.0;
   @override
+
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = Colors.grey.withOpacity(0.5)
       ..strokeCap = StrokeCap.round;
 
-    const double gridCellSize = 20;
     const double dotRadius = 2;
 
     for (double x = 0; x < size.width; x += gridCellSize) {
@@ -85,29 +118,6 @@ class _ComponentWidgetState extends State<ComponentWidget> {
         icon: Icons.delete,
         onSelected: () {
           widget.onDelete(widget.component);
-        },
-      ),
-      MenuItem(
-        label: 'Alert',
-        icon: Icons.edit, // You might want to change the icon to something related to editing
-        onSelected: () {
-          showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text("Warning"),
-                content: Text("This is a warning message."),
-                actions: <Widget>[
-                  TextButton(
-                    child: Text('Dismiss'),
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Dismiss the dialog
-                    },
-                  ),
-                ],
-              );
-            },
-          );
         },
       ),
     ];
@@ -214,7 +224,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       component.isSelected = true;
       selectedComponent = component;
       print('Selected component: ${component.id}');
-      // selectedComponentId = component.id;
+      _open
     });
     widget.onComponentSelected?.call(component.id);
   }
@@ -285,12 +295,15 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
             onAcceptWithDetails: (details) {
               final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
               final Offset localOffset = renderBox.globalToLocal(details.offset);
+              final Offset snappedPosition = snapToGrid(localOffset); // Snap the position
+
               setState(() {
-                ComponentModel component = details.data..position = localOffset;
-                component.updateConnectionPoints(); // Recalculate connection points based on new position
+                ComponentModel component = details.data..position = snappedPosition;
+                component.updateConnectionPoints(); // Optionally adjust connection points here
                 placedComponents.add(component);
               });
             },
+
             builder: (context, candidateData, rejectedData) {
               return Container(
                 key: _canvasKey,
@@ -322,15 +335,14 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                             onDragEnd: (dragDetails) {
                               final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
                               final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
+                              final Offset snappedPosition = snapToGrid(localOffsetCanvas - Offset(50 / 2, 50 / 2)); // Adjust for component's size if necessary
 
                               setState(() {
-                                component.position = Offset(
-                                  max(0, localOffsetCanvas.dx - (50 / 2)), // Adjust based on component's width for centering
-                                  max(0, localOffsetCanvas.dy - (50/ 2)), // Adjust based on component's height for centering
-                                );
+                                component.position = snappedPosition;
                                 component.updateConnectionPoints(); // Recalculate connection points based on new position
                               });
                             },
+
                             child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
                           ),
                         ),
@@ -653,4 +665,38 @@ class WaterPump extends ComponentModel{
     "outletPressure": outletPressure,
     "efficiency": efficiency,
   };
+}
+
+class ComponentEditPanel extends StatelessWidget {
+  final ComponentModel? selectedComponent;
+
+  ComponentEditPanel({this.selectedComponent});
+
+  @override
+  Widget build(BuildContext context) {
+    if (selectedComponent == null) {
+      return Center(child: Text('No component selected'));
+    }
+    // Implement your form fields and editing logic here.
+    // Use the properties from selectedComponent to initialize the form fields.
+    return ListView(
+      children: <Widget>[
+        Text('Editing Component: ${selectedComponent!.id}'),
+        // Example: Edit name property
+        TextFormField(
+          initialValue: selectedComponent!.type, // Assuming your ComponentModel has a name property
+          onChanged: (value) {
+            // Update the component's name property
+          },
+        ),
+        ElevatedButton(
+          onPressed: () {
+            // Implement update logic
+            Navigator.of(context).pop(); // Close the drawer
+          },
+          child: Text('Save Changes'),
+        ),
+      ],
+    );
+  }
 }
