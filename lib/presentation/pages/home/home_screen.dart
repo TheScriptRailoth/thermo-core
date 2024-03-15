@@ -1,8 +1,11 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
+
+String? _selectedComponentId;
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -10,7 +13,6 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 class _HomeScreenState extends State<HomeScreen> {
-  String? _selectedComponentId;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -55,160 +57,132 @@ class GridPainter extends CustomPainter {
 }
 
 class ComponentWidget extends StatefulWidget {
-  final CycleComponents component;
-  final Function(CycleComponents) onSelect;
-  final Function(CycleComponents) onDelete;
+  final ComponentModel component;
+  final Function(ComponentModel) onSelect;
+  final Function(ComponentModel) onDelete;
   final bool isSelected;
 
   const ComponentWidget({
     Key? key,
     required this.component,
     required this.onSelect,
-    this.isSelected = false,
+    this.isSelected=false,
     required this.onDelete,
   }) : super(key: key);
 
   @override
   _ComponentWidgetState createState() => _ComponentWidgetState();
 }
-
 class _ComponentWidgetState extends State<ComponentWidget> {
-  bool _isHovered = false;
+  bool _isHoveredIcon = false;
+  bool _isHoveredNode = false;
 
   @override
   Widget build(BuildContext context) {
-    // Example of accessing properties map, assuming all components have a 'name' property
-    String name = widget.component.properties['name'];
-
-    return GestureDetector(
-      onTap: () => widget.onSelect(widget.component),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _isHovered = true),
-        onExit: (_) => setState(() => _isHovered = false),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: _isHovered || widget.isSelected ? Colors.blue : Colors.transparent,
-              width: 2,
+    final entries = <ContextMenuEntry>[
+      MenuItem(
+        label: 'Delete',
+        icon: Icons.delete,
+        onSelected: () {
+          widget.onDelete(widget.component);
+        },
+      ),
+      MenuItem(
+        label: 'Alert',
+        icon: Icons.edit, // You might want to change the icon to something related to editing
+        onSelected: () {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Warning"),
+                content: Text("This is a warning message."),
+                actions: <Widget>[
+                  TextButton(
+                    child: Text('Dismiss'),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Dismiss the dialog
+                    },
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    ];
+    return ContextMenuRegion(
+      contextMenu: ContextMenu(entries: entries),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Card(
+            elevation: 0.0,
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => widget.onSelect(widget.component),
+              child: MouseRegion(
+                onEnter: (_) => setState(() => _isHoveredIcon = true),
+                onExit: (_) => setState(() => _isHoveredIcon = false),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    border: Border.all(
+                      color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Center(
+                      child: SvgPicture.asset(
+                        widget.component.imagePath,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
-          child: Column(
-            children: [
-              Image.asset(widget.component.imagePath), // Display component image
-              Text(name), // Display component name
-            ],
-          ),
-        ),
+          ...widget.component.connectionPoints.keys.map((key) {
+            Offset point = widget.component.connectionPoints[key]!;
+            return Positioned(
+              left: point.dx,
+              top: point.dy,
+              child: InkWell(
+                onTap: (){},
+                child: MouseRegion(
+                  onEnter: (_)=>setState(() {
+                    _isHoveredNode=true;
+                  }),
+                  onExit: (_)=> setState(() {
+                    _isHoveredNode = false;
+                  }),
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                        color: _isHoveredNode?Colors.green:Colors.red,
+                        shape: BoxShape.circle,
+                        border: Border.all(width: 1,color: _isHoveredNode?Colors.black:Colors.transparent)
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ],
       ),
     );
   }
 }
-
-// class ComponentWidget extends StatefulWidget {
-//   final ComponentModel component;
-//   final Function(ComponentModel) onSelect;
-//   final Function(ComponentModel) onDelete;
-//   final bool isSelected;
-//
-//   const ComponentWidget({
-//     Key? key,
-//     required this.component,
-//     required this.onSelect,
-//     this.isSelected=false,
-//     required this.onDelete,
-//   }) : super(key: key);
-//
-//   @override
-//   _ComponentWidgetState createState() => _ComponentWidgetState();
-// }
-// class _ComponentWidgetState extends State<ComponentWidget> {
-//   bool _isHoveredIcon = false;
-//   bool _isHoveredNode = false;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     final entries = <ContextMenuEntry>[
-//       MenuItem(
-//         label: 'Delete',
-//         icon: Icons.delete,
-//         onSelected: () {
-//           widget.onDelete(widget.component);
-//         },
-//       ),
-//     ];
-//     var connectionPoints = widget.component.connectionPoints;
-//     return ContextMenuRegion(
-//       contextMenu: ContextMenu(entries: entries),
-//       child: Stack(
-//         clipBehavior: Clip.none,
-//         children: [
-//           Card(
-//             elevation: 0.0,
-//             color: Colors.transparent,
-//             child: InkWell(
-//               onTap: () => widget.onSelect(widget.component),
-//               child: MouseRegion(
-//                 onEnter: (_) => setState(() => _isHoveredIcon = true),
-//                 onExit: (_) => setState(() => _isHoveredIcon = false),
-//                 child: AnimatedContainer(
-//                   duration: const Duration(milliseconds: 200),
-//                   width: 50,
-//                   height: 50,
-//                   decoration: BoxDecoration(
-//                     color: Colors.transparent,
-//                     border: Border.all(
-//                       color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
-//                       width: 2,
-//                     ),
-//                     borderRadius: BorderRadius.circular(8),
-//                   ),
-//                   child: Material(
-//                     color: Colors.transparent,
-//                     child: Center(
-//                       child: SvgPicture.asset(
-//                         widget.component.type,
-//                         width: 50,
-//                         height: 50,
-//                         fit: BoxFit.fill,
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ),
-//           ...connectionPoints.keys.map((key) {
-//             Offset point = connectionPoints[key]!;
-//             return Positioned(
-//               left: point.dx,
-//               top: point.dy,
-//               child: InkWell(
-//                 onTap: (){},
-//                 child: MouseRegion(
-//                   onEnter: (_)=>setState(() {
-//                     _isHoveredNode=true;
-//                   }),
-//                   onExit: (_)=> setState(() {
-//                     _isHoveredNode = false;
-//                   }),
-//                   child: Container(
-//                     width: 12,
-//                     height: 12,
-//                     decoration: BoxDecoration(
-//                         color: _isHoveredNode?Colors.green:Colors.red,
-//                         shape: BoxShape.circle,
-//                         border: Border.all(width: 1,color: _isHoveredNode?Colors.black:Colors.transparent)
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             );
-//           }).toList(),
-//         ],
-//       ),
-//     );
-//   }
-// }
 
 
 class RankineCycleCanvas extends StatefulWidget {
@@ -238,7 +212,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       }
       // Select the tapped component
       component.isSelected = true;
-      selectedComponent = component; // This is optional depending on your implementation
+      selectedComponent = component;
       print('Selected component: ${component.id}');
       // selectedComponentId = component.id;
     });
@@ -380,12 +354,27 @@ class ComponentSidebar extends StatelessWidget {
     'lib/presentation/assets/precipitator_icon.svg',
     'lib/presentation/assets/water_pump_icon.svg',
   ];
-  final List<String> componentsTitle = ['Turbine', "Boiler", "Precipitator", "Water Pump"];
+  final List<String> componentsTitle = ['Turbine', "Boiler", "Precipitator", "WaterPump"];
   final String? selectedComponentId;
+
+  ComponentModel createComponent(String type) {
+    switch (type) {
+      case 'Turbine':
+        return Turbine(id: UniqueKey().toString(), position: Offset.zero);
+      case 'Boiler':
+        return Boiler(id: UniqueKey().toString(), position: Offset.zero);
+      case 'WaterPump':
+        return WaterPump(id: UniqueKey().toString(), position: Offset.zero);
+      case 'Precipitator':
+        return Precipitator(id: UniqueKey().toString(), position: Offset.zero);
+      default:
+        throw Exception('Unknown component type: $type');
+    }
+  }
 
   ComponentSidebar({Key? key, this.selectedComponentId}) : super(key: key);
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context){
     void doNothing(ComponentModel component){}
     return Container(
       width: 300,
@@ -407,9 +396,7 @@ class ComponentSidebar extends StatelessWidget {
           const SizedBox(height: 10,),
           Flexible(
             child: GridView.builder(
-              // The number of items in your grid
               itemCount: components.length,
-              // Controls the layout of tiles in a grid
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2, // Number of columns
                 crossAxisSpacing: 1, // Spacing between columns
@@ -417,20 +404,13 @@ class ComponentSidebar extends StatelessWidget {
                 childAspectRatio: 1.0, // Aspect ratio of the tiles
               ),
               itemBuilder: (context, index) {
+                ComponentModel componentModel = createComponent(componentsTitle[index]);
                 return Draggable<ComponentModel>(
-                  data: ComponentModel(
-                    id: UniqueKey().toString(),
-                    type: components[index],
-                    position: Offset.zero,
-                  ),
+                  data: componentModel,
                   feedback: Material(
                     borderRadius: BorderRadius.circular(10),
                     child: ComponentWidget(
-                      component: ComponentModel(
-                        id: 'feedback-${components[index]}',
-                        type: components[index],
-                        position: Offset.zero,
-                      ),
+                      component: componentModel,
                       onSelect: doNothing,
                       onDelete: doNothing,
                     ),
@@ -488,26 +468,28 @@ class ComponentSidebar extends StatelessWidget {
   }
 }
 
-class ComponentModel {
+abstract class ComponentModel {
   final String id;
   final String type;
+  final String imagePath;
   Offset position;
-  Map<String, Offset> connectionPoints;
   bool isSelected = false;
+  Map<String, Offset> connectionPoints;
 
   ComponentModel({
     required this.id,
     required this.type,
     required this.position,
+    required this.imagePath,
   }) : connectionPoints = {} {
     updateConnectionPoints();
   }
 
+  Map<String, dynamic> get properties;
   void updateConnectionPoints() {
-    // Assuming the component is 50px wide and the desired offset for connection points is directly on its edges
     connectionPoints = {
-      'left': Offset(-5, 25), // 25 is half the height, making it vertically centered on the left
-      'right': Offset(53, 25), // 50 is the width of the component, making it right-edge centered
+      'left': Offset(-5, 25),
+      'right': Offset(53, 25),
     };
   }
 }
@@ -577,52 +559,98 @@ class Connection {
 }
 
 
-abstract class CycleComponents{
-  String id;
-  String imagePath;
-  Map<String, dynamic> properties;
+class Turbine extends ComponentModel{
+  double inletPressure;
+  double outletPressure;
+  double efficiency;
 
-  CycleComponents(this.id, this.imagePath, this.properties);
-
-  void updateProperties(Map<String, dynamic> newProperties);
-}
-
-class Turbine extends CycleComponents{
-  Turbine(String id, Map<String, dynamic> properties)
-      : super(id, 'lib/presentation/assets/turbine_icon.svg', properties);
-
-  @override
-  void updateProperties(Map<String, dynamic> newProperties) {
-    properties.addAll(newProperties);
-  }
-}
-
-class Boiler extends CycleComponents{
-  Boiler(String id, Map<String, dynamic> properties)
-      : super(id, 'lib/presentation/assets/boiler_icon.svg', properties);
+  Turbine({
+    required String id,
+    Offset position = Offset.zero,
+    this.inletPressure = 0.0,
+    this.outletPressure = 0.0,
+    this.efficiency = 0.0,
+  }):super(id: id, type: "Turbine", position: position, imagePath: 'lib/presentation/assets/turbine_icon.svg');
 
   @override
-  void updateProperties(Map<String, dynamic> newProperties) {
-    properties.addAll(newProperties);
-  }
-}
-
-class WaterPump extends CycleComponents{
-  WaterPump(String id, Map<String, dynamic>properties)
-    : super(id, 'lib/presentation/assets/water_pump_icon.svg', properties);
+  void updateConnectionPoints(){}
 
   @override
-  void updateProperties(Map<String, dynamic> newProperties) {
-    properties.addAll(newProperties);
-  }
+  Map<String, dynamic> get properties => {
+    "inletPressure": inletPressure,
+    "outletPressure": outletPressure,
+    "efficiency": efficiency,
+  };
 }
 
-class Precipitator extends CycleComponents{
-  Precipitator(String id, Map<String, dynamic>properties)
-    : super(id, 'lib/presentation/assets/precipitator_icon.svg', properties);
+class Boiler extends ComponentModel{
+  double inletPressure;
+  double outletPressure;
+  double efficiency;
+
+  Boiler({
+    required String id,
+    Offset position = Offset.zero,
+    this.inletPressure = 0.0,
+    this.outletPressure = 0.0,
+    this.efficiency = 0.0,
+  }):super(id: id, type: "Boiler", position: position, imagePath: 'lib/presentation/assets/boiler_icon.svg');
 
   @override
-  void updateProperties(Map<String, dynamic> newProperties) {
-    properties.addAll(newProperties);
-  }
+  void updateConnectionPoints(){}
+
+  @override
+  Map<String, dynamic> get properties => {
+    "inletPressure": inletPressure,
+    "outletPressure": outletPressure,
+    "efficiency": efficiency,
+  };
+}
+
+class Precipitator extends ComponentModel{
+  double inletPressure;
+  double outletPressure;
+  double efficiency;
+
+  Precipitator({
+    required String id,
+    Offset position = Offset.zero,
+    this.inletPressure = 0.0,
+    this.outletPressure = 0.0,
+    this.efficiency = 0.0,
+  }):super(id: id, type: "Precipitator", position: position, imagePath: 'lib/presentation/assets/precipitator_icon.svg');
+
+  @override
+  void updateConnectionPoints(){}
+
+  @override
+  Map<String, dynamic> get properties => {
+    "inletPressure": inletPressure,
+    "outletPressure": outletPressure,
+    "efficiency": efficiency,
+  };
+}
+
+class WaterPump extends ComponentModel{
+  double inletPressure;
+  double outletPressure;
+  double efficiency;
+
+  WaterPump({
+    required String id,
+    Offset position = Offset.zero,
+    this.inletPressure = 0.0,
+    this.outletPressure = 0.0,
+    this.efficiency = 0.0,
+  }):super(id: id, type: "WaterPump", position: position, imagePath: 'lib/presentation/assets/water_pump_icon.svg');
+
+  @override
+  void updateConnectionPoints(){}
+
+  @override
+  Map<String, dynamic> get properties => {
+    "inletPressure": inletPressure,
+    "outletPressure": outletPressure,
+    "efficiency": efficiency,
+  };
 }
