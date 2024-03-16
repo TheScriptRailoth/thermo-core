@@ -1,6 +1,6 @@
 <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
     <!-- Inlet Arrow Body -->
-    <rect x="15" y="20" width="20" height="10" fill="#0D47A1"/>
+    <rect x="15" y="20" width="10" height="10" fill="#0D47A1"/>
     <!-- Inlet Arrow Head -->
     <polygon points="10,25 15,20 15,30" fill="#0D47A1"/>
 </svg>

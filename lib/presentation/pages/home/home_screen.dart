@@ -111,102 +111,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// class HomeScreen extends StatefulWidget {
-//   static ComponentModel? _selectedComponent;
-//
-//
-//   const HomeScreen({super.key});
-//   @override
-//   State<HomeScreen> createState() => _HomeScreenState();
-// }
-// class _HomeScreenState extends State<HomeScreen> {
-//   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-//   void _openEditDrawer() {
-//     Scaffold.of(context).openDrawer();
-//   }
-//
-//   void _deselectComponent() {
-//     Navigator.of(context).pop(); // Close the drawer when the component is deselected
-//   }
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(),
-//       body: Row(
-//         children: [
-//           ComponentSidebar(selectedComponentId: _selectedComponentId),
-//           SizedBox(width: 20),
-//           Expanded(
-//             child: RankineCycleCanvas(
-//               onComponentSelected: (id) {
-//                 setState(() {
-//                   _selectedComponentId = id;
-//                 });
-//               },
-//             ),
-//           ),
-//         ],
-//       ),
-//       drawer: Drawer(
-//         child: ListView(
-//           padding: EdgeInsets.zero,
-//           children: [
-//             DrawerHeader(
-//               decoration: BoxDecoration(
-//                 color: Colors.blue,
-//               ),
-//               child: Text(
-//                 'Drawer Header',
-//                 style: TextStyle(
-//                   color: Colors.white,
-//                   fontSize: 24,
-//                 ),
-//               ),
-//             ),
-//             ListTile(
-//               leading: Icon(Icons.message),
-//               title: Text('Messages'),
-//               onTap: () {
-//                 // Update the state of the app
-//                 // ...
-//                 // Then close the drawer
-//                 Navigator.pop(context);
-//               },
-//             ),
-//             ListTile(
-//               leading: Icon(Icons.account_circle),
-//               title: Text('Profile'),
-//               onTap: () {
-//                 // Update the state of the app
-//                 // ...
-//                 // Then close the drawer
-//                 Navigator.pop(context);
-//               },
-//             ),
-//             ListTile(
-//               leading: Icon(Icons.settings),
-//               title: Text('Settings'),
-//               onTap: () {
-//                 // Update the state of the app
-//                 // ...
-//                 // Then close the drawer
-//                 Navigator.pop(context);
-//               },
-//             ),
-//           ],
-//         ),
-//       ),
-//       endDrawer: _selectedComponentId != "None selected" ? Drawer(
-//         child: Container(
-//           height: 200,
-//           width: 200,
-//           child: Text("askdjhk"),
-//         )
-//       ) : null,
-//     );
-//   }
-// }
-
 class GridPainter extends CustomPainter {
   double gridCellSize = 20.0;
   @override
@@ -249,9 +153,11 @@ class ComponentWidget extends StatefulWidget {
 class _ComponentWidgetState extends State<ComponentWidget> {
   bool _isHoveredIcon = false;
   bool _isHoveredNode = false;
+  Map<String, bool> _hoveredConnectionPoints = {};
 
   @override
   Widget build(BuildContext context) {
+    print("Connection Points : ${widget.component.connectionPoints}");
     final entries = <ContextMenuEntry>[
       MenuItem(
         label: 'Delete',
@@ -301,39 +207,118 @@ class _ComponentWidgetState extends State<ComponentWidget> {
               ),
             ),
           ),
-          ...widget.component.connectionPoints.keys.map((key) {
-            Offset point = widget.component.connectionPoints[key]!;
-            return Positioned(
-              left: point.dx,
-              top: point.dy,
-              child: InkWell(
-                onTap: (){},
-                child: MouseRegion(
-                  onEnter: (_)=>setState(() {
-                    _isHoveredNode=true;
-                  }),
-                  onExit: (_)=> setState(() {
-                    _isHoveredNode = false;
-                  }),
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                        color: _isHoveredNode?Colors.green:Colors.red,
-                        shape: BoxShape.circle,
-                        border: Border.all(width: 1,color: _isHoveredNode?Colors.black:Colors.transparent)
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }).toList(),
+          _buildComponentVisualization(),
+          ..._buildConnectionPoints(),
+          // ...widget.component.connectionPoints.keys.map((key) {
+          //   Offset point = widget.component.connectionPoints[key]!;
+          //   return Positioned(
+          //     left: point.dx,
+          //     top: point.dy,
+          //     child: InkWell(
+          //       onTap: (){},
+          //       child: MouseRegion(
+          //         onEnter: (_)=>setState(() {
+          //           _isHoveredNode=true;
+          //         }),
+          //         onExit: (_)=> setState(() {
+          //           _isHoveredNode = false;
+          //         }),
+          //         child: Container(
+          //           width: 12,
+          //           height: 12,
+          //           decoration: BoxDecoration(
+          //               color: _isHoveredNode?Colors.green:Colors.red,
+          //               shape: BoxShape.circle,
+          //               border: Border.all(width: 1,color: _isHoveredNode?Colors.black:Colors.transparent)
+          //           ),
+          //         ),
+          //       ),
+          //     ),
+          //   );
+          // }).toList(),
         ],
       ),
     );
   }
-}
 
+  Widget _buildComponentVisualization() {
+    return Card(
+      elevation: 0.0,
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => widget.onSelect(widget.component),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHoveredIcon = true),
+          onExit: (_) => setState(() => _isHoveredIcon = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              border: Border.all(
+                color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Center(
+                child: SvgPicture.asset(
+                  widget.component.imagePath,
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.fill,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildConnectionPoints() {
+    return widget.component.connectionPoints.entries.map((entry) {
+      final key = entry.key;
+      final position = entry.value;
+      final isHovered = _hoveredConnectionPoints[key] ?? false;
+
+      print("Connection Point $key at $position , Hovered: $isHovered");
+      return Positioned(
+        left: position.dx - 6, // Adjust these values as needed
+        top: position.dy - 6,
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _hoveredConnectionPoints[key] = true),
+          onExit: (_) => setState(() => _hoveredConnectionPoints[key] = false),
+          child: Draggable<Map<String, String>>(
+            data: {'componentId': widget.component.id, 'pointType': key},
+            feedback: Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.black),
+              ),
+            ),
+            child: Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: isHovered ? Colors.green : Colors.red,
+                shape: BoxShape.circle,
+                border: Border.all(color: isHovered ? Colors.black : Colors.transparent),
+              ),
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+}
 
 class RankineCycleCanvas extends StatefulWidget {
   final Function(String?)? onComponentSelected;
@@ -638,11 +623,19 @@ abstract class ComponentModel {
 
   Map<String, dynamic> get properties;
   void updateConnectionPoints() {
+
     connectionPoints = {
-      'left': Offset(-5, 25),
-      'right': Offset(53, 25),
+      'inlet': Offset(-5, 25),
+      'outlet': Offset(53, 25),
     };
+    print("update connection points called");
   }
+  // void updateConnectionPoints() {
+  //   connectionPoints = {
+  //     'left': Offset(-5, 25),
+  //     'right': Offset(53, 25),
+  //   };
+  // }
 }
 
 class ConnectionPointButton extends StatelessWidget {
@@ -672,7 +665,6 @@ class ConnectionPointButton extends StatelessWidget {
     );
   }
 }
-
 
 class ConnectionLinePainter extends CustomPainter {
   final List<Connection> connections;
@@ -709,7 +701,6 @@ class Connection {
   Connection({required this.startComponentId, required this.endComponentId, required this.startPosition, required this.endPosition});
 }
 
-
 class Turbine extends ComponentModel{
   double inletPressure;
   double outletPressure;
@@ -724,7 +715,12 @@ class Turbine extends ComponentModel{
   }):super(id: id, type: "Turbine", position: position, imagePath: 'lib/presentation/assets/turbine_icon.svg');
 
   @override
-  void updateConnectionPoints(){}
+  void updateConnectionPoints(){
+    connectionPoints = {
+      'inlet': Offset(-5, 25),
+      'outlet': Offset(53, 25),
+    };
+  }
 
   @override
   Map<String, dynamic> get properties => {
@@ -804,130 +800,4 @@ class WaterPump extends ComponentModel{
     "outletPressure": outletPressure,
     "efficiency": efficiency,
   };
-}
-
-class ComponentEditPanel extends StatelessWidget {
-  final ComponentModel? selectedComponent;
-
-  ComponentEditPanel({this.selectedComponent});
-
-  @override
-  Widget build(BuildContext context) {
-    if (selectedComponent == null) {
-      return Center(child: Text('No component selected'));
-    }
-    // Implement your form fields and editing logic here.
-    // Use the properties from selectedComponent to initialize the form fields.
-    return ListView(
-      children: <Widget>[
-        Text('Editing Component: ${selectedComponent!.id}'),
-        // Example: Edit name property
-        TextFormField(
-          initialValue: selectedComponent!.type, // Assuming your ComponentModel has a name property
-          onChanged: (value) {
-            // Update the component's name property
-          },
-        ),
-        ElevatedButton(
-          onPressed: () {
-            // Implement update logic
-            Navigator.of(context).pop(); // Close the drawer
-          },
-          child: Text('Save Changes'),
-        ),
-      ],
-    );
-  }
-}
-
-class TurbineEditPanel extends StatefulWidget {
-  final Turbine turbine;
-
-  const TurbineEditPanel({Key? key, required this.turbine}) : super(key: key);
-
-  @override
-  _TurbineEditPanelState createState() => _TurbineEditPanelState();
-}
-
-class _TurbineEditPanelState extends State<TurbineEditPanel> {
-  final _formKey = GlobalKey<FormState>();
-  late double _inletPressure;
-  late double _outletPressure;
-  late double _efficiency;
-
-  @override
-  void initState() {
-    super.initState();
-    _inletPressure = widget.turbine.inletPressure;
-    _outletPressure = widget.turbine.outletPressure;
-    _efficiency = widget.turbine.efficiency;
-  }
-
-  void _saveChanges() {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      // Assuming you have a method to update the turbine
-      // Update your turbine model here
-      print('Saving changes...');
-      // Close the panel or show a confirmation message
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 300.0, // Adjust as needed
-      padding: EdgeInsets.all(16.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Edit Turbine Properties', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            TextFormField(
-              initialValue: _inletPressure.toString(),
-              decoration: InputDecoration(labelText: 'Inlet Pressure'),
-              keyboardType: TextInputType.number,
-              onSaved: (value) => _inletPressure = double.tryParse(value!) ?? _inletPressure,
-              validator: (value) {
-                if (value == null || double.tryParse(value) == null) {
-                  return 'Please enter a valid number';
-                }
-                return null;
-              },
-            ),
-            TextFormField(
-              initialValue: _outletPressure.toString(),
-              decoration: InputDecoration(labelText: 'Outlet Pressure'),
-              keyboardType: TextInputType.number,
-              onSaved: (value) => _outletPressure = double.tryParse(value!) ?? _outletPressure,
-              validator: (value) {
-                if (value == null || double.tryParse(value) == null) {
-                  return 'Please enter a valid number';
-                }
-                return null;
-              },
-            ),
-            TextFormField(
-              initialValue: _efficiency.toString(),
-              decoration: InputDecoration(labelText: 'Efficiency'),
-              keyboardType: TextInputType.number,
-              onSaved: (value) => _efficiency = double.tryParse(value!) ?? _efficiency,
-              validator: (value) {
-                if (value == null || double.tryParse(value) == null) {
-                  return 'Please enter a valid number';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveChanges,
-              child: Text('Save Changes'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
