@@ -42,16 +42,27 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text("Modeling Software"),
         actions: [
           IconButton(
-            icon: Icon(Icons.edit),
+            icon: Icon(Icons.menu_open_sharp),
             onPressed: _toggleEditPanel,
           ),
         ],
       ),
       body: Stack(
         children: [
-          // Main content
-          Center(
-            child: Text("Main content goes here"),
+          Row(
+            children: [
+              ComponentSidebar(selectedComponentId: _selectedComponentId),
+              SizedBox(width: 20),
+              Expanded(
+                child: RankineCycleCanvas(
+                  onComponentSelected: (id) {
+                    setState(() {
+                      _selectedComponentId = id;
+                    });
+                  },
+                ),
+              ),
+            ],
           ),
           AnimatedPositioned(
             duration: Duration(milliseconds: 300),
@@ -80,7 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     // Add your form fields or other widgets here
                     Expanded(
-                      child: TurbineEditPanel(turbine: t)
+                      child: Text("HUHUI"),
                     ),
                     ElevatedButton(
                       onPressed: () {
@@ -324,169 +335,168 @@ class _ComponentWidgetState extends State<ComponentWidget> {
 }
 
 
-// class RankineCycleCanvas extends StatefulWidget {
-//   final Function(String?)? onComponentSelected;
-//   RankineCycleCanvas({Key? key, this.onComponentSelected}) : super(key: key);
-//   @override
-//
-//   _RankineCycleCanvasState createState() => _RankineCycleCanvasState();
-// }
-// class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
-//   List<ComponentModel> placedComponents = [];
-//   List<Connection> connections = [];
-//   ComponentModel? currentStartComponent;
-//   Offset? temporaryEndPosition;
-//
-//   Offset? tempConnectionStart;
-//   Offset? tempConnectionEnd;
-//   Offset? lastDragPosition;
-//
-//   ComponentModel ?selectedComponent;
-//
-//   void _selectComponent(ComponentModel component) {
-//     setState(() {
-//       // Deselect all components
-//       for (var comp in placedComponents) {
-//         comp.isSelected = false;
-//       }
-//       // Select the tapped component
-//       component.isSelected = true;
-//       selectedComponent = component;
-//       print('Selected component: ${component.id}');
-//       HomeScreen._selectedComponent= component;
-//     });
-//     widget.onComponentSelected?.call(component.id);
-//   }
-//   void _deleteComponent(ComponentModel component) {
-//     setState(() {
-//       placedComponents.removeWhere((item) => item.id == component.id);
-//       connections.removeWhere((connection) => connection.startComponentId == component.id || connection.endComponentId == component.id);
-//     });
-//   }
-//
-//   void startConnection(ComponentModel component, String connectionPointKey) {
-//     final Offset startPoint = component.connectionPoints[connectionPointKey]!;
-//     setState(() {
-//       tempConnectionStart = startPoint;
-//       tempConnectionEnd = startPoint;
-//     });
-//   }
-//
-//   void updateTemporaryConnection(Offset newPosition) {
-//     setState(() {
-//       tempConnectionEnd = newPosition;
-//     });
-//   }
-//
-//   void completeConnection(Offset end, String startComponentId, String endComponentId) {
-//     setState(() {
-//       connections.add(Connection(
-//           startComponentId: startComponentId,
-//           endComponentId: endComponentId,
-//           startPosition: tempConnectionStart!,
-//           endPosition: end));
-//       tempConnectionStart = null;
-//       tempConnectionEnd = null;
-//     });
-//   }
-//
-//   final GlobalKey _canvasKey = GlobalKey();
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: (){
-//         if(selectedComponent!=null){
-//           setState(() {
-//             for(var comp in placedComponents){
-//               comp.isSelected=false;
-//               widget.onComponentSelected?.call(null);
-//             }
-//           });
-//         }
-//       },
-//       onPanUpdate: (details) {
-//         lastDragPosition = details.localPosition;
-//         updateTemporaryConnection(details.localPosition);
-//       },
-//       onPanEnd: (details) {
-//         if (lastDragPosition != null) {
-//           completeConnection(lastDragPosition!, "startComponentId", "endComponentId");
-//           lastDragPosition = null; // Reset the position
-//         }
-//       },
-//       child: CustomPaint(
-//           painter: GridPainter(),
-//           foregroundPainter: ConnectionLinePainter(connections, tempConnectionStart, tempConnectionEnd),
-//           child: DragTarget<ComponentModel>(
-//             onWillAccept: (data) => true,
-//             // In your RankineCycleCanvas widget, inside the onAcceptWithDetails method
-//             onAcceptWithDetails: (details) {
-//               final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-//               final Offset localOffset = renderBox.globalToLocal(details.offset);
-//               final Offset snappedPosition = snapToGrid(localOffset); // Snap the position
-//
-//               setState(() {
-//                 ComponentModel component = details.data..position = snappedPosition;
-//                 component.updateConnectionPoints(); // Optionally adjust connection points here
-//                 placedComponents.add(component);
-//               });
-//             },
-//
-//             builder: (context, candidateData, rejectedData) {
-//               return Container(
-//                 key: _canvasKey,
-//                 color: Colors.white,
-//                 child: CustomPaint(
-//                   painter: GridPainter(),
-//                   child: Stack(
-//                     children: placedComponents.map((component) {
-//                       return Positioned(
-//                         left: component.position.dx,
-//                         top: component.position.dy,
-//                         child: GestureDetector(
-//                           onTap: () {
-//                             setState(() {
-//                               _selectComponent(component);
-//                             });
-//                           },
-//                           child: Draggable<ComponentModel>(
-//                             data: component,
-//                             feedback: Material(
-//                               elevation: 4.0,
-//                               child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected, onDelete: _deleteComponent,),
-//                             ),
-//                             childWhenDragging: Opacity(
-//                               opacity: 0.5,
-//                               child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
-//                             ),
-//                             // Inside the onDragEnd or similar method
-//                             onDragEnd: (dragDetails) {
-//                               final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-//                               final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
-//                               final Offset snappedPosition = snapToGrid(localOffsetCanvas - Offset(50 / 2, 50 / 2)); // Adjust for component's size if necessary
-//
-//                               setState(() {
-//                                 component.position = snappedPosition;
-//                                 component.updateConnectionPoints(); // Recalculate connection points based on new position
-//                               });
-//                             },
-//
-//                             child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
-//                           ),
-//                         ),
-//                       );
-//                     }).toList(),
-//                   ),
-//                 ),
-//
-//               );
-//             },
-//           )
-//       ),
-//     );
-//   }
-// }
+class RankineCycleCanvas extends StatefulWidget {
+  final Function(String?)? onComponentSelected;
+  RankineCycleCanvas({Key? key, this.onComponentSelected}) : super(key: key);
+  @override
+
+  _RankineCycleCanvasState createState() => _RankineCycleCanvasState();
+}
+class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
+  List<ComponentModel> placedComponents = [];
+  List<Connection> connections = [];
+  ComponentModel? currentStartComponent;
+  Offset? temporaryEndPosition;
+
+  Offset? tempConnectionStart;
+  Offset? tempConnectionEnd;
+  Offset? lastDragPosition;
+
+  ComponentModel ?selectedComponent;
+
+  void _selectComponent(ComponentModel component) {
+    setState(() {
+      // Deselect all components
+      for (var comp in placedComponents) {
+        comp.isSelected = false;
+      }
+      // Select the tapped component
+      component.isSelected = true;
+      selectedComponent = component;
+      print('Selected component: ${component.id}');
+    });
+    widget.onComponentSelected?.call(component.id);
+  }
+  void _deleteComponent(ComponentModel component) {
+    setState(() {
+      placedComponents.removeWhere((item) => item.id == component.id);
+      connections.removeWhere((connection) => connection.startComponentId == component.id || connection.endComponentId == component.id);
+    });
+  }
+
+  void startConnection(ComponentModel component, String connectionPointKey) {
+    final Offset startPoint = component.connectionPoints[connectionPointKey]!;
+    setState(() {
+      tempConnectionStart = startPoint;
+      tempConnectionEnd = startPoint;
+    });
+  }
+
+  void updateTemporaryConnection(Offset newPosition) {
+    setState(() {
+      tempConnectionEnd = newPosition;
+    });
+  }
+
+  void completeConnection(Offset end, String startComponentId, String endComponentId) {
+    setState(() {
+      connections.add(Connection(
+          startComponentId: startComponentId,
+          endComponentId: endComponentId,
+          startPosition: tempConnectionStart!,
+          endPosition: end));
+      tempConnectionStart = null;
+      tempConnectionEnd = null;
+    });
+  }
+
+  final GlobalKey _canvasKey = GlobalKey();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: (){
+        if(selectedComponent!=null){
+          setState(() {
+            for(var comp in placedComponents){
+              comp.isSelected=false;
+              widget.onComponentSelected?.call(null);
+            }
+          });
+        }
+      },
+      onPanUpdate: (details) {
+        lastDragPosition = details.localPosition;
+        updateTemporaryConnection(details.localPosition);
+      },
+      onPanEnd: (details) {
+        if (lastDragPosition != null) {
+          completeConnection(lastDragPosition!, "startComponentId", "endComponentId");
+          lastDragPosition = null; // Reset the position
+        }
+      },
+      child: CustomPaint(
+          painter: GridPainter(),
+          foregroundPainter: ConnectionLinePainter(connections, tempConnectionStart, tempConnectionEnd),
+          child: DragTarget<ComponentModel>(
+            onWillAccept: (data) => true,
+            // In your RankineCycleCanvas widget, inside the onAcceptWithDetails method
+            onAcceptWithDetails: (details) {
+              final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+              final Offset localOffset = renderBox.globalToLocal(details.offset);
+              final Offset snappedPosition = snapToGrid(localOffset); // Snap the position
+
+              setState(() {
+                ComponentModel component = details.data..position = snappedPosition;
+                component.updateConnectionPoints(); // Optionally adjust connection points here
+                placedComponents.add(component);
+              });
+            },
+
+            builder: (context, candidateData, rejectedData) {
+              return Container(
+                key: _canvasKey,
+                color: Colors.white,
+                child: CustomPaint(
+                  painter: GridPainter(),
+                  child: Stack(
+                    children: placedComponents.map((component) {
+                      return Positioned(
+                        left: component.position.dx,
+                        top: component.position.dy,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectComponent(component);
+                            });
+                          },
+                          child: Draggable<ComponentModel>(
+                            data: component,
+                            feedback: Material(
+                              elevation: 4.0,
+                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected, onDelete: _deleteComponent,),
+                            ),
+                            childWhenDragging: Opacity(
+                              opacity: 0.5,
+                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
+                            ),
+                            // Inside the onDragEnd or similar method
+                            onDragEnd: (dragDetails) {
+                              final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+                              final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
+                              final Offset snappedPosition = snapToGrid(localOffsetCanvas - Offset(50 / 2, 50 / 2)); // Adjust for component's size if necessary
+
+                              setState(() {
+                                component.position = snappedPosition;
+                                component.updateConnectionPoints(); // Recalculate connection points based on new position
+                              });
+                            },
+
+                            child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+
+              );
+            },
+          )
+      ),
+    );
+  }
+}
 
 class ComponentSidebar extends StatelessWidget {
   final List<String> components = [
