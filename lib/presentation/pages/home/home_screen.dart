@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ComponentModel? selectedComponent;
   bool isEditingPanelVisible = false;
   bool isSideBarVisible = false;
-  String sidebarContent = "Home";
+  String sidebarContent = "";
   String xyz="";
 
   void _toggleEditPanel() {
@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _getSidebarContent() {
     switch (sidebarContent) {
-      case "Home":
+      case "Devices":
         return ComponentSidebar(selectedComponentId: HomeScreen._selectedComponentId,);
       case "Settings":
         return Container();
@@ -82,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   children: [
                     IconButton(
-                      onPressed: () => _toggleSideBar("Home"),
+                      onPressed: () => _toggleSideBar("Devices"),
                       icon: Icon(CupertinoIcons.home, size: 18),
                     ),
                     IconButton(
