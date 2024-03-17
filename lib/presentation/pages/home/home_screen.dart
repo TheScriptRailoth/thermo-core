@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/svg.dart';
 import '../../widgets/SidebarContent/component_panel.dart';
 import 'common.dart';
 
@@ -63,15 +64,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Modeling Software"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.menu_open_sharp),
-            onPressed: _toggleEditPanel,
-          ),
-        ],
-      ),
+      // appBar: AppBar(
+      //   title: Text("Modeling Software"),
+      //   actions: [
+      //     IconButton(
+      //       icon: Icon(Icons.menu_open_sharp),
+      //       onPressed: _toggleEditPanel,
+      //     ),
+      //   ],
+      // ),
       body: Stack(
         children: [
           Row(
@@ -81,10 +82,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 color: Colors.black.withOpacity(0.3),
                 child: Column(
                   children: [
+                    SizedBox(height: 5,),
                     IconButton(
                       onPressed: () => _toggleSideBar("Devices"),
-                      icon: Icon(CupertinoIcons.home, size: 18),
+                      icon: Image.asset("lib/presentation/assets/puzzle.png"),
+                      // icon: Icon(CupertinoIcons.home, size: 18),
                     ),
+                    SizedBox(height: 5,),
                     IconButton(
                       onPressed: () {
                         _toggleSideBar("Settings");
