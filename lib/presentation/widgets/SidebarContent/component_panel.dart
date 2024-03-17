@@ -36,19 +36,6 @@ class ComponentSidebar extends StatelessWidget {
       color: Colors.grey[200],
       child: Column(
         children: [
-          Container(
-            height: 30,
-            width: 300,
-            color: Colors.grey,
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                SizedBox(width: 5,),
-                Text("Devices", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14), textAlign: TextAlign.left,),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10,),
           Flexible(
             child: GridView.builder(
               itemCount: components.length,

@@ -44,7 +44,6 @@ class ComponentWidget extends StatefulWidget {
 }
 class _ComponentWidgetState extends State<ComponentWidget> {
   bool _isHoveredIcon = false;
-  bool _isHoveredNode = false;
   Map<String, bool> _hoveredConnectionPoints = {};
 
   @override

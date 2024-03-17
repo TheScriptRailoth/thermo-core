@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import '../../widgets/SidebarContent/component_panel.dart';
 import 'common.dart';
 
@@ -97,7 +98,28 @@ class _HomeScreenState extends State<HomeScreen> {
                 duration: Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 width: isSideBarVisible ? 300 : 0,
-                child: _getSidebarContent(),
+                child: Column(
+                  children: [
+                    Container(
+                      color: Colors.black.withOpacity(0.3),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(sidebarContent, style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),),
+                          IconButton(onPressed: (){
+                            setState(() {
+                              isSideBarVisible=false;
+                            });
+                          }, icon: Icon(CupertinoIcons.minus))
+                        ],
+                      ),
+                    ),
+                    Expanded(child: _getSidebarContent()),
+                  ],
+                ),
               ),
               SizedBox(width: 20),
               Expanded(
