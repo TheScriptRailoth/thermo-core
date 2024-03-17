@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isEditingPanelVisible = false;
   bool isSideBarVisible = false;
   String sidebarContent = "Home";
+  String xyz="";
 
   void _toggleEditPanel() {
     setState(() {
@@ -33,18 +34,25 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void _toggleSideBar(){
+  void _toggleSideBar(String contentType){
     setState(() {
-      isSideBarVisible=!isSideBarVisible;
+      if(sidebarContent!=contentType){
+        isSideBarVisible=true;
+        sidebarContent=contentType;
+        xyz=sidebarContent;
+      }else {
+        isSideBarVisible = !isSideBarVisible;
+        xyz = isSideBarVisible ? contentType : "";
+      }
     });
   }
 
   Widget _getSidebarContent() {
     switch (sidebarContent) {
       case "Home":
-        return Text("Home Content");
+        return ComponentSidebar();
       case "Settings":
-        return Text("Settings Content");
+        return Container();
     // Add more cases as needed
       default:
         return Text("Content Not Found");
@@ -73,20 +81,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   children: [
                     IconButton(
-                      onPressed: () {
-                        setState(() {
-                          isSideBarVisible = true;
-                          sidebarContent = "Home";
-                        });
-                      },
+                      onPressed: () => _toggleSideBar("Home"),
                       icon: Icon(CupertinoIcons.home, size: 18),
                     ),
                     IconButton(
                       onPressed: () {
-                        setState(() {
-                          isSideBarVisible = true;
-                          sidebarContent = "Settings";
-                        });
+                        _toggleSideBar("Settings");
                       },
                       icon: Icon(CupertinoIcons.settings, size: 18),
                     ),
