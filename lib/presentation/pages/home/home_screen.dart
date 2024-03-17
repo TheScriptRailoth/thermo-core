@@ -1,8 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/SidebarContent/component_panel.dart';
 import 'common.dart';
-
 
 const double gridSize = 20.0;
 Offset snapToGrid(Offset position) {
@@ -11,13 +11,13 @@ Offset snapToGrid(Offset position) {
   return Offset(x, y);
 }
 
-String? _selectedComponentId;
-
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
+
+  static String? _selectedComponentId;
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _getSidebarContent() {
     switch (sidebarContent) {
       case "Home":
-        return ComponentSidebar();
+        return ComponentSidebar(selectedComponentId: HomeScreen._selectedComponentId,);
       case "Settings":
         return Container();
     // Add more cases as needed
@@ -104,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: RankineCycleCanvas(
                   onComponentSelected: (id) {
                     setState(() {
-                      _selectedComponentId = id;
+                      HomeScreen._selectedComponentId = id;
                     });
                   },
                 ),
