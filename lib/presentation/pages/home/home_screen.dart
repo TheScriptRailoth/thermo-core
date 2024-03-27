@@ -55,9 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return ComponentSidebar(selectedComponentId: HomeScreen._selectedComponentId,);
       case "Settings":
         return Container();
-    // Add more cases as needed
       default:
-        return Text("Content Not Found");
+        return Text("");
     }
   }
 

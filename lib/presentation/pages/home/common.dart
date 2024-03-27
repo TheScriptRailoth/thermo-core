@@ -170,45 +170,76 @@ class _ComponentWidgetState extends State<ComponentWidget> {
     );
   }
 
+  // List<Widget> _buildConnectionPoints() {
+  //   return widget.component.connectionPoints.entries.map((entry) {
+  //     final key = entry.key;
+  //     final position = entry.value;
+  //     final isHovered = _hoveredConnectionPoints[key] ?? false;
+  //
+  //     String imagePath1;
+  //     if (key == 'left') {
+  //       imagePath1 = 'lib/presentation/assets/inlet_icon.svg';
+  //     } else {
+  //       imagePath1 = 'lib/presentation/assets/outlet_icon.svg';
+  //     }
+  //     return Positioned(
+  //       left: position.dx - 6,
+  //       top: position.dy - 6,
+  //       child: MouseRegion(
+  //         onEnter: (_) => setState(() => _hoveredConnectionPoints[key] = true),
+  //         onExit: (_) => setState(() => _hoveredConnectionPoints[key] = false),
+  //         child: Container(
+  //           width: 12,
+  //           height: 12,
+  //           decoration: BoxDecoration(
+  //             color: isHovered ? Colors.green : Colors.red,
+  //             shape: BoxShape.circle,
+  //             border: Border.all(color: isHovered ? Colors.black : Colors.transparent),
+  //           ),
+  //         ),
+  //       ),
+  //     );
+  //   }).toList();
+  // }
+
   List<Widget> _buildConnectionPoints() {
     return widget.component.connectionPoints.entries.map((entry) {
       final key = entry.key;
       final position = entry.value;
       final isHovered = _hoveredConnectionPoints[key] ?? false;
 
-      print("Connection Point $key at $position , Hovered: $isHovered");
+      String svgAssetPath = key == 'inlet' ? 'lib/presentation/assets/inlet_icon.svg' : 'lib/presentation/assets/outlet_icon.svg';
+
+      // Adjust the size of the container and the SVG as necessary
+      double containerSize = 24.0; // Smaller container size
+      double svgSize = 20.0; // SVG size to fit within the container without touching the borders
+
       return Positioned(
-        left: position.dx - 6, // Adjust these values as needed
-        top: position.dy - 6,
+        left: position.dx - (containerSize / 2),
+        top: position.dy - (containerSize / 2),
         child: MouseRegion(
           onEnter: (_) => setState(() => _hoveredConnectionPoints[key] = true),
           onExit: (_) => setState(() => _hoveredConnectionPoints[key] = false),
-          child: Draggable<Map<String, String>>(
-            data: {'componentId': widget.component.id, 'pointType': key},
-            feedback: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.black),
-              ),
+          child: Container(
+            width: containerSize,
+            height: containerSize,
+            decoration: BoxDecoration(
+              color: isHovered ? Colors.green.withOpacity(0.2) : Colors.transparent, // Slight background color on hover
+              shape: BoxShape.circle,
+              border: Border.all(color: isHovered ? Colors.green : Colors.grey),
             ),
-            child: Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                color: isHovered ? Colors.green : Colors.red,
-                shape: BoxShape.circle,
-                border: Border.all(color: isHovered ? Colors.black : Colors.transparent),
-              ),
+            child: SvgPicture.asset(
+              svgAssetPath,
+              color: isHovered ? Colors.black : null, // Change color on hover
+              width: svgSize,
+              height: svgSize,
+              fit: BoxFit.scaleDown, // Ensure SVG doesn't overflow container
             ),
           ),
         ),
       );
     }).toList();
   }
-
 }
 
 class RankineCycleCanvas extends StatefulWidget {
@@ -397,8 +428,8 @@ abstract class ComponentModel {
 
   void updateConnectionPoints() {
     connectionPoints = {
-      'inlet': Offset(0, 40),
-      'outlet': Offset(80, 40),
+      'inlet': Offset(-20, 17),
+      'outlet': Offset(50, 17),
     };
     print("update connection points called");
   }
