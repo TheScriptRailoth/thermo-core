@@ -210,9 +210,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
 
       String svgAssetPath = key == 'inlet' ? 'lib/presentation/assets/inlet_icon.svg' : 'lib/presentation/assets/outlet_icon.svg';
 
-      // Adjust the size of the container and the SVG as necessary
-      double containerSize = 24.0; // Smaller container size
-      double svgSize = 20.0; // SVG size to fit within the container without touching the borders
+      double containerSize = 24.0;
 
       return Positioned(
         left: position.dx - (containerSize / 2),
@@ -224,16 +222,18 @@ class _ComponentWidgetState extends State<ComponentWidget> {
             width: containerSize,
             height: containerSize,
             decoration: BoxDecoration(
-              color: isHovered ? Colors.green.withOpacity(0.2) : Colors.transparent, // Slight background color on hover
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(5),
+              color: isHovered ? Colors.green.withOpacity(0.2) : Colors.transparent,
+              shape: BoxShape.rectangle,
               border: Border.all(color: isHovered ? Colors.green : Colors.grey),
             ),
-            child: SvgPicture.asset(
-              svgAssetPath,
-              color: isHovered ? Colors.black : null, // Change color on hover
-              width: svgSize,
-              height: svgSize,
-              fit: BoxFit.scaleDown, // Ensure SVG doesn't overflow container
+            child: Transform.scale(
+              scale: 2,
+              child: SvgPicture.asset(
+                svgAssetPath,
+                color: isHovered ? Colors.black : null,
+                fit: BoxFit.contain, // Ensures the SVG fits within the container while maintaining its aspect ratio
+              ),
             ),
           ),
         ),
@@ -406,6 +406,22 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 }
 
 
+class RankineCycleModel {
+  late List<ComponentModel> components;
+
+  void addComponent(ComponentModel component) {
+    components.add(component);
+  }
+
+  void connectComponents(String fromComponentId, String toComponentId) {
+    // Find components by ID and set up their connections
+  }
+
+  void calculateCycle() {
+    // Iterate through components in the cycle, calculating properties in the correct order
+  }
+}
+
 
 abstract class ComponentModel {
   final String id;
@@ -414,6 +430,9 @@ abstract class ComponentModel {
   Offset position;
   bool isSelected = false;
   Map<String, Offset> connectionPoints;
+  List<String> connectedTo = [];
+
+  Map<String, ComponentModel?> connections = {};
 
   ComponentModel({
     required this.id,
@@ -428,10 +447,13 @@ abstract class ComponentModel {
 
   void updateConnectionPoints() {
     connectionPoints = {
-      'inlet': Offset(-20, 17),
-      'outlet': Offset(50, 17),
+      'inlet': Offset(-8, 40),
+      'outlet': Offset(85, 40),
     };
     print("update connection points called");
+  }
+  void connectTo(String connectionPoint, ComponentModel targetComponent) {
+    connections[connectionPoint] = targetComponent;
   }
 }
 
