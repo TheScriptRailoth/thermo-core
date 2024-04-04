@@ -103,7 +103,6 @@ class ComponentSidebar extends StatelessWidget {
               ),
             ),
           )
-
         ],
       ),
     );
