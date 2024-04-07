@@ -26,8 +26,171 @@ class GridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class ComponentWidget extends StatefulWidget {
+// class ComponentWidget extends StatefulWidget {
+//   final ComponentModel component;
+//   final Function(ComponentModel) onSelect;
+//   final Function(ComponentModel) onDelete;
+//   final bool isSelected;
+//
+//   const ComponentWidget({
+//     Key? key,
+//     required this.component,
+//     required this.onSelect,
+//     this.isSelected=false,
+//     required this.onDelete,
+//   }) : super(key: key);
+//
+//   @override
+//   _ComponentWidgetState createState() => _ComponentWidgetState();
+// }
+// class _ComponentWidgetState extends State<ComponentWidget> {
+//   bool _isHoveredIcon = false;
+//   Map<String, bool> _hoveredConnectionPoints = {};
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     print("Connection Points : ${widget.component.connectionPoints}");
+//     final entries = <ContextMenuEntry>[
+//       MenuItem(
+//         label: 'Delete',
+//         icon: Icons.delete,
+//         onSelected: () {
+//           widget.onDelete(widget.component);
+//         },
+//       ),
+//     ];
+//     return ContextMenuRegion(
+//       contextMenu: ContextMenu(entries: entries),
+//       child: Stack(
+//         clipBehavior: Clip.none,
+//         children: [
+//           Card(
+//             elevation: 0.0,
+//             color: Colors.transparent,
+//             child: InkWell(
+//               onTap: () => widget.onSelect(widget.component),
+//               child: MouseRegion(
+//                 onEnter: (_) => setState(() => _isHoveredIcon = true),
+//                 onExit: (_) => setState(() => _isHoveredIcon = false),
+//                 child: AnimatedContainer(
+//                   duration: const Duration(milliseconds: 200),
+//                   width: 70,
+//                   height: 70,
+//                   decoration: BoxDecoration(
+//                     color: Colors.transparent,
+//                     border: Border.all(
+//                       color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
+//                       width: 2,
+//                     ),
+//                     borderRadius: BorderRadius.circular(8),
+//                   ),
+//                   child: Material(
+//                     color: Colors.transparent,
+//                     child: Center(
+//                       child: SvgPicture.asset(
+//                         widget.component.imagePath,
+//                         width: 70,
+//                         height: 70,
+//                         fit: BoxFit.fill,
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ),
+//           _buildComponentVisualization(),
+//           ..._buildConnectionPoints(),
+//         ],
+//       ),
+//     );
+//   }
+//
+//   Widget _buildComponentVisualization() {
+//     return Card(
+//       elevation: 0.0,
+//       color: Colors.transparent,
+//       child: InkWell(
+//         onTap: () => widget.onSelect(widget.component),
+//         child: MouseRegion(
+//           onEnter: (_) => setState(() => _isHoveredIcon = true),
+//           onExit: (_) => setState(() => _isHoveredIcon = false),
+//           child: AnimatedContainer(
+//             duration: const Duration(milliseconds: 200),
+//             width: 70,
+//             height: 70,
+//             decoration: BoxDecoration(
+//               color: Colors.transparent,
+//               border: Border.all(
+//                 color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
+//                 width: 2,
+//               ),
+//               borderRadius: BorderRadius.circular(8),
+//             ),
+//             child: Material(
+//               color: Colors.transparent,
+//               child: Center(
+//                 child: SvgPicture.asset(
+//                   widget.component.imagePath,
+//                   width: 70,
+//                   height: 70,
+//                   fit: BoxFit.fill,
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+//
+//   List<Widget> _buildConnectionPoints() {
+//     double containerSize = 30.0; // For hover detection area
+//     double iconSize = 50.0; // Actual size of the connection point icons
+//     String inletSvgAssetPath = 'lib/presentation/assets/inlet_icon.svg';
+//     String outletSvgAssetPath = 'lib/presentation/assets/outlet_icon.svg';
+//
+//     return widget.component.connectionPoints.entries.map((entry) {
+//       final key = entry.key;
+//       final position = entry.value;
+//       String svgAssetPath = key == 'inlet' ? inletSvgAssetPath : outletSvgAssetPath;
+//       double left = position.dx - (containerSize / 2);
+//       double top = position.dy - (containerSize / 2);
+//
+//       bool isHovered = _hoveredConnectionPoints[key] ?? false;
+//       return Positioned(
+//         left: left,
+//         top: top,
+//         child: MouseRegion(
+//           onEnter: (_) => setState(() {
+//             _hoveredConnectionPoints[key] = true;
+//           }),
+//           onExit: (_) => setState(() {
+//             _hoveredConnectionPoints[key] = false;
+//           }),
+//           child: Container(
+//             width: containerSize,
+//             height: containerSize,
+//             decoration: BoxDecoration(
+//               color: Colors.transparent, // For visibility during development, you might set a color
+//               borderRadius: BorderRadius.circular(10),
+//               border: isHovered ? Border.all(color: Colors.blue, width: 2) : Border.all(color: Colors.transparent), // Show border if hovered
+//             ),
+//             child: SvgPicture.asset(
+//               svgAssetPath,
+//               width: iconSize,
+//               height: iconSize,
+//             ),
+//           ),
+//         ),
+//       );
+//     }).toList();
+//   }
+// }
+
+class ComponentWidget extends StatelessWidget {
   final ComponentModel component;
+  // final VoidCallback onSelect;
   final Function(ComponentModel) onSelect;
   final Function(ComponentModel) onDelete;
   final bool isSelected;
@@ -36,180 +199,29 @@ class ComponentWidget extends StatefulWidget {
     Key? key,
     required this.component,
     required this.onSelect,
-    this.isSelected=false,
-    required this.onDelete,
   }) : super(key: key);
 
   @override
-  _ComponentWidgetState createState() => _ComponentWidgetState();
-}
-class _ComponentWidgetState extends State<ComponentWidget> {
-  bool _isHoveredIcon = false;
-  Map<String, bool> _hoveredConnectionPoints = {};
-
-  @override
   Widget build(BuildContext context) {
-    print("Connection Points : ${widget.component.connectionPoints}");
-    final entries = <ContextMenuEntry>[
-      MenuItem(
-        label: 'Delete',
-        icon: Icons.delete,
-        onSelected: () {
-          widget.onDelete(widget.component);
-        },
-      ),
-    ];
-    return ContextMenuRegion(
-      contextMenu: ContextMenu(entries: entries),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Card(
-            elevation: 0.0,
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: () => widget.onSelect(widget.component),
-              child: MouseRegion(
-                onEnter: (_) => setState(() => _isHoveredIcon = true),
-                onExit: (_) => setState(() => _isHoveredIcon = false),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 70,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    border: Border.all(
-                      color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: Center(
-                      child: SvgPicture.asset(
-                        widget.component.imagePath,
-                        width: 70,
-                        height: 70,
-                        fit: BoxFit.fill,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
+    return GestureDetector(
+      onTap: onSelect,
+      child: Container(
+        width: 70,
+        height: 70,
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          border: Border.all(
+            color: component.isSelected ? Colors.blue : Colors.transparent,
+            width: 2,
           ),
-          _buildComponentVisualization(),
-          ..._buildConnectionPoints(),
-          // ...widget.component.connectionPoints.keys.map((key) {
-          //   Offset point = widget.component.connectionPoints[key]!;
-          //   return Positioned(
-          //     left: point.dx,
-          //     top: point.dy,
-          //     child: InkWell(
-          //       onTap: (){},
-          //       child: MouseRegion(
-          //         onEnter: (_)=>setState(() {
-          //           _isHoveredNode=true;
-          //         }),
-          //         onExit: (_)=> setState(() {
-          //           _isHoveredNode = false;
-          //         }),
-          //         child: Container(
-          //           width: 12,
-          //           height: 12,
-          //           decoration: BoxDecoration(
-          //               color: _isHoveredNode?Colors.green:Colors.red,
-          //               shape: BoxShape.circle,
-          //               border: Border.all(width: 1,color: _isHoveredNode?Colors.black:Colors.transparent)
-          //           ),
-          //         ),
-          //       ),
-          //     ),
-          //   );
-          // }).toList(),
-        ],
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: SvgPicture.asset(component.imagePath, fit: BoxFit.fill),
       ),
     );
-  }
-
-  Widget _buildComponentVisualization() {
-    return Card(
-      elevation: 0.0,
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => widget.onSelect(widget.component),
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _isHoveredIcon = true),
-          onExit: (_) => setState(() => _isHoveredIcon = false),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              border: Border.all(
-                color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: Center(
-                child: SvgPicture.asset(
-                  widget.component.imagePath,
-                  width: 70,
-                  height: 70,
-                  fit: BoxFit.fill,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildConnectionPoints() {
-    return widget.component.connectionPoints.entries.map((entry) {
-      final key = entry.key;
-      final position = entry.value;
-      final isHovered = _hoveredConnectionPoints[key] ?? false;
-
-      String svgAssetPath = key == 'inlet' ? 'lib/presentation/assets/inlet_icon.svg' : 'lib/presentation/assets/outlet_icon.svg';
-
-      double containerSize = 24.0;
-
-      return Positioned(
-        left: position.dx - (containerSize / 2),
-        top: position.dy - (containerSize / 2),
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _hoveredConnectionPoints[key] = true),
-          onExit: (_) => setState(() => _hoveredConnectionPoints[key] = false),
-          child: Container(
-            width: containerSize,
-            height: containerSize,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(5),
-              color: isHovered ? Colors.green.withOpacity(0.2) : Colors.transparent,
-              shape: BoxShape.rectangle,
-              border: Border.all(color: isHovered ? Colors.green : Colors.grey),
-            ),
-            child: Transform.scale(
-              scale: 1.5,
-              child: SvgPicture.asset(
-                svgAssetPath,
-                color: isHovered ? Colors.black : null,
-                fit: BoxFit.contain, // Ensures the SVG fits within the container while maintaining its aspect ratio
-              ),
-            ),
-          ),
-        ),
-      );
-    }).toList();
   }
 }
+
 
 class RankineCycleCanvas extends StatefulWidget {
   final Function(String?)? onComponentSelected;
@@ -264,7 +276,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
               final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
               final Offset localOffset = renderBox.globalToLocal(details.offset);
               final Offset snappedPosition = snapToGrid(localOffset);
-
               setState(() {
                 if (details.data.isNew) {
                   ComponentModel newComponent = details.data.component.copyWith(
@@ -281,8 +292,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                 }
               });
             },
-
-
             builder: (context, candidateData, rejectedData) {
               return Container(
                 key: _canvasKey,
@@ -342,33 +351,64 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   }
 }
 
-class ConnectionPointButton extends StatelessWidget {
-  final IconData iconData;
-  final VoidCallback onTap;
-  final bool isHovered;
+class ConnectionPoint extends StatelessWidget {
+  final Offset position;
+  final VoidCallback onHover;
+  final String type; // "inlet" or "outlet"
 
-  const ConnectionPointButton({
+  const ConnectionPoint({
     Key? key,
-    required this.iconData,
-    required this.onTap,
-    this.isHovered = false,
+    required this.position,
+    required this.onHover,
+    required this.type,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    // Asset selection based on type
+    String svgAssetPath = (type == 'inlet')
+        ? 'lib/presentation/assets/inlet_icon.svg'
+        : 'lib/presentation/assets/outlet_icon.svg';
+    
+    return Positioned(
+      left: position.dx,
+      top: position.dy,
       child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Icon(
-          iconData,
-          size: 20,
-          color: isHovered ? Colors.green : Colors.blue,
-        ),
+        onHover: (_) => onHover(),
+        child: SvgPicture.asset(svgAssetPath, width: 20, height: 20),
       ),
     );
   }
 }
+
+
+// class ConnectionPointButton extends StatelessWidget {
+//   final IconData iconData;
+//   final VoidCallback onTap;
+//   final bool isHovered;
+//
+//   const ConnectionPointButton({
+//     Key? key,
+//     required this.iconData,
+//     required this.onTap,
+//     this.isHovered = false,
+//   }) : super(key: key);
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDetector(
+//       onTap: onTap,
+//       child: MouseRegion(
+//         cursor: SystemMouseCursors.click,
+//         child: Icon(
+//           iconData,
+//           size: 20,
+//           color: isHovered ? Colors.green : Colors.blue,
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 abstract class ComponentModel {
   final String id;
@@ -379,7 +419,6 @@ abstract class ComponentModel {
   Map<String, Offset> connectionPoints;
 
   ComponentModel copyWith({String? id, Offset? position});
-
   ComponentModel({
     required this.id,
     required this.type,
