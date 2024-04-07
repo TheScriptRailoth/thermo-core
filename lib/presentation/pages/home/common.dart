@@ -258,33 +258,30 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       },
       child: CustomPaint(
           painter: GridPainter(),
-          child: DragTarget<ComponentModel>(
+          child: DragTarget<DraggableComponentData>(
             onWillAccept: (data) => true,
-            // onAcceptWithDetails: (details) {
-            //   final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-            //   final Offset localOffset = renderBox.globalToLocal(details.offset);
-            //   final Offset snappedPosition = snapToGrid(localOffset); // Snap the position
-            //
-            //   setState(() {
-            //     ComponentModel component = details.data..position = snappedPosition;
-            //     component.updateConnectionPoints(); // Optionally adjust connection points here
-            //     placedComponents.add(component);
-            //   });
-            // },
-
-            onAcceptWithDetails: (DragTargetDetails<ComponentModel> details) {
+            onAcceptWithDetails: (DragTargetDetails<DraggableComponentData> details) {
               final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
               final Offset localOffset = renderBox.globalToLocal(details.offset);
-              final Offset snappedPosition = snapToGrid(localOffset); // Snap to grid logic
+              final Offset snappedPosition = snapToGrid(localOffset);
 
               setState(() {
-                ComponentModel newComponent = details.data.copyWith(
-                  id: UniqueKey().toString(), // Ensure a new ID
-                  position: snappedPosition,
-                );
-                placedComponents.add(newComponent);
+                if (details.data.isNew) {
+                  ComponentModel newComponent = details.data.component.copyWith(
+                    id: UniqueKey().toString(),
+                    position: snappedPosition,
+                  );
+                  placedComponents.add(newComponent);
+                } else {
+                  // Move existing component
+                  var foundIndex = placedComponents.indexWhere((component) => component.id == details.data.component.id);
+                  if (foundIndex != -1) {
+                    placedComponents[foundIndex] = placedComponents[foundIndex].copyWith(position: snappedPosition);
+                  }
+                }
               });
             },
+
 
             builder: (context, candidateData, rejectedData) {
               return Container(
@@ -303,8 +300,8 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                               _selectComponent(component);
                             });
                           },
-                          child: Draggable<ComponentModel>(
-                            data: component,
+                          child: Draggable<DraggableComponentData>(
+                              data: DraggableComponentData(component, isNew: false),
                             feedback: Material(
                               elevation: 4.0,
                               child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected, onDelete: _deleteComponent,),
@@ -313,14 +310,20 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                               opacity: 0.5,
                               child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
                             ),
-                            // Inside the onDragEnd or similar method
+
                             onDragEnd: (dragDetails) {
+                              // Adjusting an existing component's position
                               final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
                               final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
-                              final Offset snappedPosition = snapToGrid(localOffsetCanvas - const Offset(50 / 2, 50 / 2)); // Adjust for component's size if necessary
+                              final Offset snappedPosition = snapToGrid(localOffsetCanvas - const Offset(35, 35)); // Adjust based on actual size
+
+                              // Update existing component's position
                               setState(() {
-                                component.position = snappedPosition;
-                                component.updateConnectionPoints();
+                                var index = placedComponents.indexWhere((comp) => comp.id == component.id);
+                                if (index != -1) {
+                                  var updatedComponent = component.copyWith(position: snappedPosition);
+                                  placedComponents[index] = updatedComponent;
+                                }
                               });
                             },
                             child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
@@ -415,6 +418,14 @@ class ComponentFactory {
     }
   }
 }
+
+class DraggableComponentData {
+  final ComponentModel component;
+  final bool isNew;
+
+  DraggableComponentData(this.component, {this.isNew = true});
+}
+
 
 class Turbine extends ComponentModel {
   double inletPressure;

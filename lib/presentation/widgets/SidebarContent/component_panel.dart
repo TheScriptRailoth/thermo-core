@@ -47,8 +47,8 @@ class ComponentSidebar extends StatelessWidget {
               ),
               itemBuilder: (context, index) {
                 ComponentModel componentModel = createComponent(componentsTitle[index]);
-                return Draggable<ComponentModel>(
-                  data: componentModel,
+                return Draggable<DraggableComponentData>(
+                  data: DraggableComponentData(createComponent(componentsTitle[index]), isNew: true),
                   feedback: Material(
                     borderRadius: BorderRadius.circular(10),
                     child: ComponentWidget(
