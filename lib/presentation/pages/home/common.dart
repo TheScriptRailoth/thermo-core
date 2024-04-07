@@ -26,171 +26,8 @@ class GridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-// class ComponentWidget extends StatefulWidget {
-//   final ComponentModel component;
-//   final Function(ComponentModel) onSelect;
-//   final Function(ComponentModel) onDelete;
-//   final bool isSelected;
-//
-//   const ComponentWidget({
-//     Key? key,
-//     required this.component,
-//     required this.onSelect,
-//     this.isSelected=false,
-//     required this.onDelete,
-//   }) : super(key: key);
-//
-//   @override
-//   _ComponentWidgetState createState() => _ComponentWidgetState();
-// }
-// class _ComponentWidgetState extends State<ComponentWidget> {
-//   bool _isHoveredIcon = false;
-//   Map<String, bool> _hoveredConnectionPoints = {};
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     print("Connection Points : ${widget.component.connectionPoints}");
-//     final entries = <ContextMenuEntry>[
-//       MenuItem(
-//         label: 'Delete',
-//         icon: Icons.delete,
-//         onSelected: () {
-//           widget.onDelete(widget.component);
-//         },
-//       ),
-//     ];
-//     return ContextMenuRegion(
-//       contextMenu: ContextMenu(entries: entries),
-//       child: Stack(
-//         clipBehavior: Clip.none,
-//         children: [
-//           Card(
-//             elevation: 0.0,
-//             color: Colors.transparent,
-//             child: InkWell(
-//               onTap: () => widget.onSelect(widget.component),
-//               child: MouseRegion(
-//                 onEnter: (_) => setState(() => _isHoveredIcon = true),
-//                 onExit: (_) => setState(() => _isHoveredIcon = false),
-//                 child: AnimatedContainer(
-//                   duration: const Duration(milliseconds: 200),
-//                   width: 70,
-//                   height: 70,
-//                   decoration: BoxDecoration(
-//                     color: Colors.transparent,
-//                     border: Border.all(
-//                       color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
-//                       width: 2,
-//                     ),
-//                     borderRadius: BorderRadius.circular(8),
-//                   ),
-//                   child: Material(
-//                     color: Colors.transparent,
-//                     child: Center(
-//                       child: SvgPicture.asset(
-//                         widget.component.imagePath,
-//                         width: 70,
-//                         height: 70,
-//                         fit: BoxFit.fill,
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//               ),
-//             ),
-//           ),
-//           _buildComponentVisualization(),
-//           ..._buildConnectionPoints(),
-//         ],
-//       ),
-//     );
-//   }
-//
-//   Widget _buildComponentVisualization() {
-//     return Card(
-//       elevation: 0.0,
-//       color: Colors.transparent,
-//       child: InkWell(
-//         onTap: () => widget.onSelect(widget.component),
-//         child: MouseRegion(
-//           onEnter: (_) => setState(() => _isHoveredIcon = true),
-//           onExit: (_) => setState(() => _isHoveredIcon = false),
-//           child: AnimatedContainer(
-//             duration: const Duration(milliseconds: 200),
-//             width: 70,
-//             height: 70,
-//             decoration: BoxDecoration(
-//               color: Colors.transparent,
-//               border: Border.all(
-//                 color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
-//                 width: 2,
-//               ),
-//               borderRadius: BorderRadius.circular(8),
-//             ),
-//             child: Material(
-//               color: Colors.transparent,
-//               child: Center(
-//                 child: SvgPicture.asset(
-//                   widget.component.imagePath,
-//                   width: 70,
-//                   height: 70,
-//                   fit: BoxFit.fill,
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ),
-//       ),
-//     );
-//   }
-//
-//   List<Widget> _buildConnectionPoints() {
-//     double containerSize = 30.0; // For hover detection area
-//     double iconSize = 50.0; // Actual size of the connection point icons
-//     String inletSvgAssetPath = 'lib/presentation/assets/inlet_icon.svg';
-//     String outletSvgAssetPath = 'lib/presentation/assets/outlet_icon.svg';
-//
-//     return widget.component.connectionPoints.entries.map((entry) {
-//       final key = entry.key;
-//       final position = entry.value;
-//       String svgAssetPath = key == 'inlet' ? inletSvgAssetPath : outletSvgAssetPath;
-//       double left = position.dx - (containerSize / 2);
-//       double top = position.dy - (containerSize / 2);
-//
-//       bool isHovered = _hoveredConnectionPoints[key] ?? false;
-//       return Positioned(
-//         left: left,
-//         top: top,
-//         child: MouseRegion(
-//           onEnter: (_) => setState(() {
-//             _hoveredConnectionPoints[key] = true;
-//           }),
-//           onExit: (_) => setState(() {
-//             _hoveredConnectionPoints[key] = false;
-//           }),
-//           child: Container(
-//             width: containerSize,
-//             height: containerSize,
-//             decoration: BoxDecoration(
-//               color: Colors.transparent, // For visibility during development, you might set a color
-//               borderRadius: BorderRadius.circular(10),
-//               border: isHovered ? Border.all(color: Colors.blue, width: 2) : Border.all(color: Colors.transparent), // Show border if hovered
-//             ),
-//             child: SvgPicture.asset(
-//               svgAssetPath,
-//               width: iconSize,
-//               height: iconSize,
-//             ),
-//           ),
-//         ),
-//       );
-//     }).toList();
-//   }
-// }
-
-class ComponentWidget extends StatelessWidget {
+class ComponentWidget extends StatefulWidget {
   final ComponentModel component;
-  // final VoidCallback onSelect;
   final Function(ComponentModel) onSelect;
   final Function(ComponentModel) onDelete;
   final bool isSelected;
@@ -199,29 +36,157 @@ class ComponentWidget extends StatelessWidget {
     Key? key,
     required this.component,
     required this.onSelect,
+    this.isSelected=false,
+    required this.onDelete,
   }) : super(key: key);
 
   @override
+  _ComponentWidgetState createState() => _ComponentWidgetState();
+}
+class _ComponentWidgetState extends State<ComponentWidget> {
+  bool _isHoveredIcon = false;
+  Map<String, bool> _hoveredConnectionPoints = {};
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onSelect,
-      child: Container(
-        width: 70,
-        height: 70,
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          border: Border.all(
-            color: component.isSelected ? Colors.blue : Colors.transparent,
-            width: 2,
+    print("Connection Points : ${widget.component.connectionPoints}");
+    final entries = <ContextMenuEntry>[
+      MenuItem(
+        label: 'Delete',
+        icon: Icons.delete,
+        onSelected: () {
+          widget.onDelete(widget.component);
+        },
+      ),
+    ];
+    return ContextMenuRegion(
+      contextMenu: ContextMenu(entries: entries),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Card(
+            elevation: 0.0,
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => widget.onSelect(widget.component),
+              child: MouseRegion(
+                onEnter: (_) => setState(() => _isHoveredIcon = true),
+                onExit: (_) => setState(() => _isHoveredIcon = false),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 70,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    border: Border.all(
+                      color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Center(
+                      child: SvgPicture.asset(
+                        widget.component.imagePath,
+                        width: 70,
+                        height: 70,
+                        fit: BoxFit.fill,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: SvgPicture.asset(component.imagePath, fit: BoxFit.fill),
+          _buildComponentVisualization(),
+          ..._buildConnectionPoints(),
+        ],
       ),
     );
   }
-}
 
+  Widget _buildComponentVisualization() {
+    return Card(
+      elevation: 0.0,
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => widget.onSelect(widget.component),
+        child: MouseRegion(
+          onEnter: (_) => setState(() => _isHoveredIcon = true),
+          onExit: (_) => setState(() => _isHoveredIcon = false),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: Colors.transparent,
+              border: Border.all(
+                color: _isHoveredIcon || widget.isSelected ? Colors.blue : Colors.transparent,
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: Center(
+                child: SvgPicture.asset(
+                  widget.component.imagePath,
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.fill,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildConnectionPoints() {
+    double containerSize = 30.0; // For hover detection area
+    double iconSize = 50.0; // Actual size of the connection point icons
+    String inletSvgAssetPath = 'lib/presentation/assets/inlet_icon.svg';
+    String outletSvgAssetPath = 'lib/presentation/assets/outlet_icon.svg';
+
+    return widget.component.connectionPoints.entries.map((entry) {
+      final key = entry.key;
+      final position = entry.value;
+      String svgAssetPath = key == 'inlet' ? inletSvgAssetPath : outletSvgAssetPath;
+      double left = position.dx - (containerSize / 2);
+      double top = position.dy - (containerSize / 2);
+
+      bool isHovered = _hoveredConnectionPoints[key] ?? false;
+      return Positioned(
+        left: left,
+        top: top,
+        child: MouseRegion(
+          onEnter: (_) => setState(() {
+            _hoveredConnectionPoints[key] = true;
+          }),
+          onExit: (_) => setState(() {
+            _hoveredConnectionPoints[key] = false;
+          }),
+          child: Container(
+            width: containerSize,
+            height: containerSize,
+            decoration: BoxDecoration(
+              color: Colors.transparent, // For visibility during development, you might set a color
+              borderRadius: BorderRadius.circular(10),
+              border: isHovered ? Border.all(color: Colors.blue, width: 2) : Border.all(color: Colors.transparent), // Show border if hovered
+            ),
+            child: SvgPicture.asset(
+              svgAssetPath,
+              width: iconSize,
+              height: iconSize,
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+}
 
 class RankineCycleCanvas extends StatefulWidget {
   final Function(String?)? onComponentSelected;
@@ -229,10 +194,144 @@ class RankineCycleCanvas extends StatefulWidget {
   @override
   _RankineCycleCanvasState createState() => _RankineCycleCanvasState();
 }
+// class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
+//   List<ComponentModel> placedComponents = [];
+//   List<Connection> connections = [];
+//   ComponentModel ?selectedComponent;
+//
+//   void addConnection(Connection connection) {
+//     setState(() {
+//       connections.add(connection);
+//     });
+//   }
+//
+//   void _selectComponent(ComponentModel component) {
+//     setState(() {
+//       // Deselect all components
+//       for (var comp in placedComponents) {
+//         comp.isSelected = false;
+//       }
+//       // Select the tapped component
+//       component.isSelected = true;
+//       selectedComponent = component;
+//       print('Selected component: ${component.id}');
+//     });
+//     widget.onComponentSelected?.call(component.id);
+//   }
+//   void _deleteComponent(ComponentModel component) {
+//     setState(() {
+//       placedComponents.removeWhere((item) => item.id == component.id);
+//     });
+//   }
+//
+//   final GlobalKey _canvasKey = GlobalKey();
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     return GestureDetector(
+//       onTap: (){
+//         if(selectedComponent!=null){
+//           setState(() {
+//             for(var comp in placedComponents){
+//               comp.isSelected=false;
+//               widget.onComponentSelected?.call(null);
+//             }
+//           });
+//         }
+//       },
+//       child: CustomPaint(
+//           painter: GridPainter(),
+//           child: DragTarget<DraggableComponentData>(
+//             onWillAccept: (data) => true,
+//             onAcceptWithDetails: (DragTargetDetails<DraggableComponentData> details) {
+//               final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+//               final Offset localOffset = renderBox.globalToLocal(details.offset);
+//               final Offset snappedPosition = snapToGrid(localOffset);
+//               setState(() {
+//                 if (details.data.isNew) {
+//                   ComponentModel newComponent = details.data.component.copyWith(
+//                     id: UniqueKey().toString(),
+//                     position: snappedPosition,
+//                   );
+//                   placedComponents.add(newComponent);
+//                 } else {
+//                   // Move existing component
+//                   var foundIndex = placedComponents.indexWhere((component) => component.id == details.data.component.id);
+//                   if (foundIndex != -1) {
+//                     placedComponents[foundIndex] = placedComponents[foundIndex].copyWith(position: snappedPosition);
+//                   }
+//                 }
+//               });
+//             },
+//             builder: (context, candidateData, rejectedData) {
+//               return Container(
+//                 key: _canvasKey,
+//                 color: Colors.white,
+//                 child: CustomPaint(
+//                   painter: GridPainter(),
+//                   child: Stack(
+//                     children: placedComponents.map((component) {
+//                       return Positioned(
+//                         left: component.position.dx,
+//                         top: component.position.dy,
+//                         child: GestureDetector(
+//                           onTap: () {
+//                             setState(() {
+//                               _selectComponent(component);
+//                             });
+//                           },
+//                           child: Draggable<DraggableComponentData>(
+//                               data: DraggableComponentData(component, isNew: false),
+//                             feedback: Material(
+//                               elevation: 4.0,
+//                               child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected, onDelete: _deleteComponent,),
+//                             ),
+//                             childWhenDragging: Opacity(
+//                               opacity: 0.5,
+//                               child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
+//                             ),
+//
+//                             onDragEnd: (dragDetails) {
+//                               // Adjusting an existing component's position
+//                               final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+//                               final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
+//                               final Offset snappedPosition = snapToGrid(localOffsetCanvas - const Offset(35, 35)); // Adjust based on actual size
+//
+//                               // Update existing component's position
+//                               setState(() {
+//                                 var index = placedComponents.indexWhere((comp) => comp.id == component.id);
+//                                 if (index != -1) {
+//                                   var updatedComponent = component.copyWith(position: snappedPosition);
+//                                   placedComponents[index] = updatedComponent;
+//                                 }
+//                               });
+//                             },
+//                             child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
+//                           ),
+//                         ),
+//                       );
+//                     }).toList(),
+//                   ),
+//                 ),
+//
+//               );
+//             },
+//           )
+//       ),
+//     );
+//   }
+// }
+
 class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   List<ComponentModel> placedComponents = [];
-
+  List<Connection> connections = [];
   ComponentModel ?selectedComponent;
+
+  void addConnection(Connection connection) {
+    setState(() {
+      connections.add(connection);
+    });
+  }
 
   void _selectComponent(ComponentModel component) {
     setState(() {
@@ -268,177 +367,119 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
           });
         }
       },
-      child: CustomPaint(
-          painter: GridPainter(),
-          child: DragTarget<DraggableComponentData>(
-            onWillAccept: (data) => true,
-            onAcceptWithDetails: (DragTargetDetails<DraggableComponentData> details) {
-              final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-              final Offset localOffset = renderBox.globalToLocal(details.offset);
-              final Offset snappedPosition = snapToGrid(localOffset);
-              setState(() {
-                if (details.data.isNew) {
-                  ComponentModel newComponent = details.data.component.copyWith(
-                    id: UniqueKey().toString(),
-                    position: snappedPosition,
-                  );
-                  placedComponents.add(newComponent);
-                } else {
-                  // Move existing component
-                  var foundIndex = placedComponents.indexWhere((component) => component.id == details.data.component.id);
-                  if (foundIndex != -1) {
-                    placedComponents[foundIndex] = placedComponents[foundIndex].copyWith(position: snappedPosition);
+      child: Container(
+        key: _canvasKey,
+        color: Colors.white,
+        child: Stack(
+          children: [
+            CustomPaint(
+              painter: GridPainter(),
+              child: Container(),
+            ),
+            CustomPaint(
+              painter: ConnectionPainter(connections),
+              child: buildComponents(),
+            )
+          ],
+        ),
+      )
+    );
+  }
+
+  Widget buildComponents() {
+    return Stack(
+      children: placedComponents.map((component) {
+        return Positioned(
+            left: component.position.dx,
+            top: component.position.dy,
+            child: DragTarget<DraggableComponentData>(
+              onWillAccept: (data) => true,
+              onAcceptWithDetails: (DragTargetDetails<DraggableComponentData> details) {
+                final RenderBox renderBox = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+                final Offset localOffset = renderBox.globalToLocal(details.offset);
+                final Offset snappedPosition = snapToGrid(localOffset);
+                setState(() {
+                  if (details.data.isNew) {
+                    ComponentModel newComponent = details.data.component.copyWith(
+                      id: UniqueKey().toString(),
+                      position: snappedPosition,
+                    );
+                    placedComponents.add(newComponent);
+                  } else {
+                    // Move existing component
+                    var foundIndex = placedComponents.indexWhere((component) => component.id == details.data.component.id);
+                    if (foundIndex != -1) {
+                      placedComponents[foundIndex] = placedComponents[foundIndex].copyWith(position: snappedPosition);
+                    }
                   }
-                }
-              });
-            },
-            builder: (context, candidateData, rejectedData) {
-              return Container(
-                key: _canvasKey,
-                color: Colors.white,
-                child: CustomPaint(
-                  painter: GridPainter(),
-                  child: Stack(
-                    children: placedComponents.map((component) {
-                      return Positioned(
-                        left: component.position.dx,
-                        top: component.position.dy,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectComponent(component);
-                            });
-                          },
-                          child: Draggable<DraggableComponentData>(
-                              data: DraggableComponentData(component, isNew: false),
-                            feedback: Material(
-                              elevation: 4.0,
-                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected, onDelete: _deleteComponent,),
-                            ),
-                            childWhenDragging: Opacity(
-                              opacity: 0.5,
-                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
-                            ),
-
-                            onDragEnd: (dragDetails) {
-                              // Adjusting an existing component's position
-                              final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
-                              final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
-                              final Offset snappedPosition = snapToGrid(localOffsetCanvas - const Offset(35, 35)); // Adjust based on actual size
-
-                              // Update existing component's position
+                });
+              },
+              builder: (context, candidateData, rejectedData) {
+                return Container(
+                  key: _canvasKey,
+                  color: Colors.white,
+                  child: CustomPaint(
+                    painter: GridPainter(),
+                    child: Stack(
+                      children: placedComponents.map((component) {
+                        return Positioned(
+                          left: component.position.dx,
+                          top: component.position.dy,
+                          child: GestureDetector(
+                            onTap: () {
                               setState(() {
-                                var index = placedComponents.indexWhere((comp) => comp.id == component.id);
-                                if (index != -1) {
-                                  var updatedComponent = component.copyWith(position: snappedPosition);
-                                  placedComponents[index] = updatedComponent;
-                                }
+                                _selectComponent(component);
                               });
                             },
-                            child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
+                            child: Draggable<DraggableComponentData>(
+                              data: DraggableComponentData(component, isNew: false),
+                              feedback: Material(
+                                elevation: 4.0,
+                                child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected, onDelete: _deleteComponent,),
+                              ),
+                              childWhenDragging: Opacity(
+                                opacity: 0.5,
+                                child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
+                              ),
+
+                              onDragEnd: (dragDetails) {
+                                // Adjusting an existing component's position
+                                final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+                                final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
+                                final Offset snappedPosition = snapToGrid(localOffsetCanvas - const Offset(35, 35)); // Adjust based on actual size
+
+                                // Update existing component's position
+                                setState(() {
+                                  var index = placedComponents.indexWhere((comp) => comp.id == component.id);
+                                  if (index != -1) {
+                                    var updatedComponent = component.copyWith(position: snappedPosition);
+                                    placedComponents[index] = updatedComponent;
+                                  }
+                                });
+                              },
+                              child: ComponentWidget(component: component, onSelect: _selectComponent, isSelected: component.isSelected,onDelete: _deleteComponent),
+                            ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
 
-              );
-            },
-          )
-      ),
+                );
+              },
+            )
+        );
+      }).toList(),
     );
   }
 }
 
-class ConnectionPoint extends StatelessWidget {
-  final Offset position;
-  final VoidCallback onHover;
-  final String type; // "inlet" or "outlet"
+class DraggableComponentData {
+  final ComponentModel component;
+  final bool isNew;
 
-  const ConnectionPoint({
-    Key? key,
-    required this.position,
-    required this.onHover,
-    required this.type,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    // Asset selection based on type
-    String svgAssetPath = (type == 'inlet')
-        ? 'lib/presentation/assets/inlet_icon.svg'
-        : 'lib/presentation/assets/outlet_icon.svg';
-    
-    return Positioned(
-      left: position.dx,
-      top: position.dy,
-      child: MouseRegion(
-        onHover: (_) => onHover(),
-        child: SvgPicture.asset(svgAssetPath, width: 20, height: 20),
-      ),
-    );
-  }
+  DraggableComponentData(this.component, {this.isNew = true});
 }
-
-
-// class ConnectionPointButton extends StatelessWidget {
-//   final IconData iconData;
-//   final VoidCallback onTap;
-//   final bool isHovered;
-//
-//   const ConnectionPointButton({
-//     Key? key,
-//     required this.iconData,
-//     required this.onTap,
-//     this.isHovered = false,
-//   }) : super(key: key);
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return GestureDetector(
-//       onTap: onTap,
-//       child: MouseRegion(
-//         cursor: SystemMouseCursors.click,
-//         child: Icon(
-//           iconData,
-//           size: 20,
-//           color: isHovered ? Colors.green : Colors.blue,
-//         ),
-//       ),
-//     );
-//   }
-// }
-
-abstract class ComponentModel {
-  final String id;
-  final String type;
-  final String imagePath;
-  Offset position;
-  bool isSelected = false;
-  Map<String, Offset> connectionPoints;
-
-  ComponentModel copyWith({String? id, Offset? position});
-  ComponentModel({
-    required this.id,
-    required this.type,
-    required this.position,
-    required this.imagePath,
-  }) : connectionPoints = {} {
-    updateConnectionPoints();
-  }
-
-  Map<String, dynamic> get properties;
-
-  void updateConnectionPoints() {
-    connectionPoints = {
-      'inlet': Offset(-8, 40),
-      'outlet': Offset(85, 40),
-    };
-    print("update connection points called");
-  }
-}
-
 class ComponentFactory {
   static ComponentModel createComponent(ComponentType type, Offset position) {
     final String id = UniqueKey().toString();
@@ -458,13 +499,39 @@ class ComponentFactory {
   }
 }
 
-class DraggableComponentData {
-  final ComponentModel component;
-  final bool isNew;
+abstract class ComponentModel {
+  final String id;
+  final String type;
+  final String imagePath;
+  Offset position;
+  bool isSelected = false;
+  Map<String, Offset> connectionPoints;
+  Map<String, ConnectionEndpoint?> connectedTo={};
 
-  DraggableComponentData(this.component, {this.isNew = true});
+  ComponentModel copyWith({
+    String? id,
+    Offset? position,
+    Map<String,ConnectionEndpoint?>? connectedTo,
+  });
+  ComponentModel({
+    required this.id,
+    required this.type,
+    required this.position,
+    required this.imagePath,
+  }) : connectionPoints = {} {
+    updateConnectionPoints();
+  }
+
+  Map<String, dynamic> get properties;
+
+  void updateConnectionPoints() {
+    connectionPoints = {
+      'inlet': Offset(0, 40),
+      'outlet': Offset(79, 40),
+    };
+    print("update connection points called");
+  }
 }
-
 
 class Turbine extends ComponentModel {
   double inletPressure;
@@ -474,6 +541,8 @@ class Turbine extends ComponentModel {
   Turbine({
     required String id,
     Offset position = Offset.zero,
+    Map<String, ConnectionEndpoint?> connectedTo = const {},
+
     this.inletPressure = 0.0,
     this.outletPressure = 0.0,
     this.efficiency = 0.0,
@@ -490,6 +559,8 @@ class Turbine extends ComponentModel {
   Turbine copyWith({
     String? id,
     Offset? position,
+    Map<String, ConnectionEndpoint?>? connectedTo,
+
     double? inletPressure,
     double? outletPressure,
     double? efficiency,
@@ -497,6 +568,8 @@ class Turbine extends ComponentModel {
     return Turbine(
       id: id ?? this.id,
       position: position ?? this.position,
+      connectedTo: connectedTo ?? this.connectedTo,
+
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
       efficiency: efficiency ?? this.efficiency,
@@ -511,6 +584,8 @@ class Boiler extends ComponentModel{
   Boiler({
     required String id,
     Offset position = Offset.zero,
+    Map<String, ConnectionEndpoint?>? connectedTo,
+
     this.inletPressure = 0.0,
     this.outletPressure = 0.0,
     this.efficiency = 0.0,
@@ -527,6 +602,8 @@ class Boiler extends ComponentModel{
   Boiler copyWith({
     String? id,
     Offset? position,
+    Map<String, ConnectionEndpoint?>? connectedTo,
+
     double? inletPressure,
     double? outletPressure,
     double? efficiency,
@@ -534,6 +611,8 @@ class Boiler extends ComponentModel{
     return Boiler(
       id: id ?? this.id,
       position: position ?? this.position,
+      connectedTo: connectedTo ?? this.connectedTo,
+
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
       efficiency: efficiency ?? this.efficiency,
@@ -548,6 +627,8 @@ class Precipitator extends ComponentModel{
   Precipitator({
     required String id,
     Offset position = Offset.zero,
+    Map<String, ConnectionEndpoint?>? connectedTo,
+
     this.inletPressure = 0.0,
     this.outletPressure = 0.0,
     this.efficiency = 0.0,
@@ -564,6 +645,8 @@ class Precipitator extends ComponentModel{
   Precipitator copyWith({
     String? id,
     Offset? position,
+    Map<String, ConnectionEndpoint?>? connectedTo,
+
     double? inletPressure,
     double? outletPressure,
     double? efficiency,
@@ -571,6 +654,8 @@ class Precipitator extends ComponentModel{
     return Precipitator(
       id: id ?? this.id,
       position: position ?? this.position,
+      connectedTo: connectedTo ?? this.connectedTo,
+
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
       efficiency: efficiency ?? this.efficiency,
@@ -585,6 +670,8 @@ class WaterPump extends ComponentModel{
   WaterPump({
     required String id,
     Offset position = Offset.zero,
+    Map<String, ConnectionEndpoint?>? connectedTo,
+
     this.inletPressure = 0.0,
     this.outletPressure = 0.0,
     this.efficiency = 0.0,
@@ -601,6 +688,8 @@ class WaterPump extends ComponentModel{
   WaterPump copyWith({
     String? id,
     Offset? position,
+    Map<String, ConnectionEndpoint?>? connectedTo,
+
     double? inletPressure,
     double? outletPressure,
     double? efficiency,
@@ -608,9 +697,57 @@ class WaterPump extends ComponentModel{
     return WaterPump(
       id: id ?? this.id,
       position: position ?? this.position,
+      connectedTo: connectedTo ?? this.connectedTo,
+
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
       efficiency: efficiency ?? this.efficiency,
     );
   }
 }
+
+class ConnectionEndpoint {
+  String componentId;
+  String pointId;
+
+  ConnectionEndpoint({required this.componentId, required this.pointId});
+}
+
+class Connection {
+  Offset startPoint;
+  Offset endPoint;
+  String startComponentId;
+  String endComponentId;
+
+  Connection({
+    required this.startPoint,
+    required this.endPoint,
+    required this.startComponentId,
+    required this.endComponentId,
+  });
+}
+
+class ConnectionPainter extends CustomPainter {
+  final List<Connection> connections;
+
+  ConnectionPainter(this.connections);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.red // Connection line color
+      ..strokeWidth = 2; // Connection line width
+
+    // Draw each connection
+    for (var connection in connections) {
+      canvas.drawLine(connection.startPoint, connection.endPoint, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant ConnectionPainter oldDelegate) {
+    return oldDelegate.connections != connections;
+  }
+}
+
+

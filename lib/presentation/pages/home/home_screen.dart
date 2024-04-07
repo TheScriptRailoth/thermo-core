@@ -98,33 +98,39 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               AnimatedContainer(
-                duration: Duration(milliseconds: 300),
+                duration: const Duration(milliseconds: 250),
                 curve: Curves.easeInOut,
                 width: isSideBarVisible ? 300 : 0,
-                child: Column(
-                  children: [
-                    Container(
-                      color: Colors.black.withOpacity(0.3),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(sidebarContent, style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),),
-                          IconButton(onPressed: (){
-                            setState(() {
-                              isSideBarVisible=false;
-                            });
-                          }, icon: Icon(CupertinoIcons.minus))
-                        ],
-                      ),
+                child: ClipRect(
+                  child: OverflowBox(
+                    maxWidth: isSideBarVisible ? 300 : MediaQuery.of(context).size.width,
+                    alignment: Alignment.topLeft,
+                    child: Column(
+                      children: [
+                        Container(
+                          color: Colors.black.withOpacity(0.3),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(sidebarContent, style: TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                              ),),
+                              IconButton(onPressed: (){
+                                setState(() {
+                                  isSideBarVisible=false;
+                                });
+                              }, icon: Icon(CupertinoIcons.minus))
+                            ],
+                          ),
+                        ),
+                        Expanded(child: _getSidebarContent()),
+                      ],
                     ),
-                    Expanded(child: _getSidebarContent()),
-                  ],
+                  ),
                 ),
               ),
-              SizedBox(width: 20),
+              const SizedBox(width: 20),
               Expanded(
                 child: RankineCycleCanvas(
                   onComponentSelected: (id) {
