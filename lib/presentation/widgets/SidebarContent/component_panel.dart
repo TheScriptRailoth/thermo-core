@@ -54,7 +54,7 @@ class ComponentSidebar extends StatelessWidget {
                     child: ComponentWidget(
                       component: componentModel,
                       onSelect: doNothing,
-                      onDelete: doNothing,
+                      onDelete: doNothing, onConnectionStart: (ComponentModel , Offset , String ) {  }, onConnectionUpdate: (Offset ) {  }, onConnectionEnd: () {  },
                     ),
                     elevation: 4.0,
                   ),
