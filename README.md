@@ -1,4 +1,4 @@
-# edurank
+# ThermoCore
 
 A new Flutter project.
 
