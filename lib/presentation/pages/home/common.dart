@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
 import 'home_screen.dart';
-enum ComponentType { Turbine, Boiler, Precipitator, WaterPump}
+enum ComponentType { Turbine, Boiler, Precipitator, WaterPump, Inlet}
 
 class GridPainter extends CustomPainter {
   double gridCellSize = 20.0;
@@ -251,7 +251,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     });
   }
 
-
   void updateComponentPosition(ComponentModel component, Offset newPosition) {
     setState(() {
       component.position = newPosition;
@@ -260,13 +259,18 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     });
   }
 
-
   void onConnectionUpdate(DragUpdateDetails details) {
-    RenderBox renderBox = context.findRenderObject() as RenderBox;
-    Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+    RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
+    Offset localPosition = renderBoxCanvas.globalToLocal(details.globalPosition);
     setState(() {
       currentConnectionEnd = localPosition;
     });
+
+    if (!isEndPointValid(localPosition)) {
+      print("Dropped outside a valid inlet");
+    } else {
+      print("Dropped on a valid inlet");
+    }
   }
 
   ComponentModel? findComponentClosestTo(Offset point) {
@@ -283,22 +287,53 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     return closestComp;
   }
 
-  void onConnectionEnd() {
-    // Add the connection to the list if it's valid
-    if (currentConnectionStart != null && currentConnectionEnd != null) {
-      connections.add(Connection(
-          startPoint: currentConnectionStart!,
-          endPoint: currentConnectionEnd!,
-          startComponentId: "startId", // Set these appropriately
-          endComponentId: "endId"
-      ));
+  bool isEndPointValid(Offset endPoint) {
+    // This function now uses the placedComponents directly since it's within the same class
+    for (var component in placedComponents) {
+      Offset inletPosition = component.position + component.connectionPoints['inlet']!;
+      double hitRadius = 20.0; // Adjust the hit radius as needed
+
+      if ((endPoint - inletPosition).distance <= hitRadius) {
+        print("Valid inlet found at ${component.position}");
+        return true;
+      }
     }
-    // Reset the drawing connection points
-    setState(() {
-      currentConnectionStart = null;
-      currentConnectionEnd = null;
-    });
+    print("No valid inlet found at $endPoint");
+    return false;
   }
+
+  void onConnectionEnd() {
+    if (currentConnectionStart != null && currentConnectionEnd != null) {
+      if (isEndPointValid(currentConnectionEnd!)) {
+        addConnection(Connection(
+            startPoint: currentConnectionStart!,
+            endPoint: currentConnectionEnd!,
+            startComponentId: "startId",  // Set appropriately
+            endComponentId: "endId"       // Set appropriately
+        ));
+      } else {
+        showDialog(
+            context: context,
+            builder: (_) => AlertDialog(
+              title: Text("Invalid Connection"),
+              content: Text("Connections must end on a valid inlet."),
+              actions: <Widget>[
+                TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text("OK")
+                )
+              ],
+            )
+        );
+        // Reset the connection drawing if invalid
+        setState(() {
+          currentConnectionStart = null;
+          currentConnectionEnd = null;
+        });
+      }
+    }
+  }
+
   void onComponentTap(ComponentModel component) {
     setState(() {
       if (selectedComponent != component) {
@@ -439,12 +474,11 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                             ),
 
                             onDragEnd: (dragDetails) {
-                              // Adjusting an existing component's position
                               final RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
                               final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
                               final Offset snappedPosition = snapToGrid(localOffsetCanvas - const Offset(35, 35));
 
-                              // Update existing component's position
+
                               setState(() {
                                 var index = placedComponents.indexWhere((comp) => comp.id == component.id);
                                 if (index != -1) {
@@ -530,6 +564,17 @@ abstract class ComponentModel {
     Offset localPosition = position + connectionPoints[pointId]!;
     return renderBox.localToGlobal(localPosition);
   }
+
+  bool hitTest(Offset point) {
+    Offset inletPosition = position + connectionPoints['inlet']!;
+    double hitRadius = 20.0;  // Increase if needed
+    bool hit = (point - inletPosition).distance <= hitRadius;
+    if (hit) {
+      print("Hit detected at inlet at $inletPosition");
+    }
+    return hit;
+  }
+
 }
 
 class Turbine extends ComponentModel {
