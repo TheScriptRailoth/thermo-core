@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
@@ -57,7 +59,6 @@ class _ComponentWidgetState extends State<ComponentWidget> {
 
   @override
   Widget build(BuildContext context) {
-    print("Connection Points : ${widget.component.connectionPoints}");
     final entries = <ContextMenuEntry>[
       MenuItem(
         label: 'Delete',
@@ -180,6 +181,8 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   List<ComponentModel> placedComponents = [];
   List<Connection> connections = [];
   ComponentModel ?selectedComponent;
+
+  late ConnectionPainter _connectionPainter;
 
   void addConnection(Connection connection) {
     setState(() {
@@ -313,7 +316,11 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     });
   }
 
-
+  @override
+  void initState() {
+    super.initState();
+    _connectionPainter = ConnectionPainter(connections: connections);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -326,6 +333,16 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
               widget.onComponentSelected?.call(null);
             }
           });
+        }
+      },
+      onTapUp: (details) {
+        final RenderBox renderBox = context.findRenderObject() as RenderBox;
+        final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+        final Connection? tappedConnection = _connectionPainter.checkHit(localPosition);
+        if (tappedConnection != null) {
+          print("Tapped on connection from ${tappedConnection.startComponentId} to ${tappedConnection.endComponentId}");
+        } else {
+          print("Tap position: $localPosition did not hit any connections.");
         }
       },
       child: CustomPaint(
@@ -609,7 +626,8 @@ class Precipitator extends ComponentModel{
     "inletPressure": inletPressure,
     "outletPressure": outletPressure,
     "efficiency": efficiency,
-    ""
+    "entropy" : entropy,
+    "enthalapy" : enthalapy,
   };
 
   @override
@@ -621,6 +639,8 @@ class Precipitator extends ComponentModel{
     double? inletPressure,
     double? outletPressure,
     double? efficiency,
+    double? entropy,
+    double? enthalapy,
   }) {
     return Precipitator(
       id: id ?? this.id,
@@ -630,6 +650,8 @@ class Precipitator extends ComponentModel{
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
       efficiency: efficiency ?? this.efficiency,
+      enthalapy: enthalapy?? this.enthalapy,
+      entropy: entropy ?? this.entropy,
     );
   }
 }
@@ -637,6 +659,8 @@ class WaterPump extends ComponentModel{
   double inletPressure;
   double outletPressure;
   double efficiency;
+  double entropy;
+  double enthalapy;
 
   WaterPump({
     required String id,
@@ -646,6 +670,8 @@ class WaterPump extends ComponentModel{
     this.inletPressure = 0.0,
     this.outletPressure = 0.0,
     this.efficiency = 0.0,
+    this.entropy=0.0,
+    this.enthalapy=0.0,
   }):super(id: id, type: "WaterPump", position: position, imagePath: 'lib/presentation/assets/water_pump_icon.svg');
 
   @override
@@ -653,6 +679,8 @@ class WaterPump extends ComponentModel{
     "inletPressure": inletPressure,
     "outletPressure": outletPressure,
     "efficiency": efficiency,
+    "entropy":entropy,
+    "enthalapy" : enthalapy,
   };
 
   @override
@@ -664,6 +692,8 @@ class WaterPump extends ComponentModel{
     double? inletPressure,
     double? outletPressure,
     double? efficiency,
+    double? entropy,
+    double? enthalapy,
   }) {
     return WaterPump(
       id: id ?? this.id,
@@ -673,6 +703,8 @@ class WaterPump extends ComponentModel{
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
       efficiency: efficiency ?? this.efficiency,
+      entropy: entropy ?? this.entropy,
+      enthalapy: enthalapy?? this.enthalapy,
     );
   }
 }
@@ -695,6 +727,28 @@ class Connection {
     required this.endPoint,
     required this.startComponentId,
     required this.endComponentId});
+
+  Rect getHitZone(double touchWidth) {
+    // Define a thicker line for easier hit detection
+    final double halfWidth = touchWidth / 2;
+    final Offset direction = endPoint - startPoint;
+    final double length = direction.distance;
+    final Offset unitDirection = direction / length;
+    final Offset normal = Offset(-unitDirection.dy, unitDirection.dx);
+    final List<Offset> points = [
+      startPoint + normal * halfWidth,
+      startPoint - normal * halfWidth,
+      endPoint - normal * halfWidth,
+      endPoint + normal * halfWidth
+    ];
+
+    double left = points.map((p) => p.dx).reduce(min);
+    double right = points.map((p) => p.dx).reduce(max);
+    double top = points.map((p) => p.dy).reduce(min);
+    double bottom = points.map((p) => p.dy).reduce(max);
+
+    return Rect.fromLTRB(left, top, right, bottom);
+  }
 }
 
 class ConnectionPainter extends CustomPainter {
@@ -712,12 +766,10 @@ class ConnectionPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = Colors.red
-      ..strokeWidth = 2;
+      ..strokeWidth = 4;
 
     for (Connection connection in connections) {
-      if (connection.startPoint != null && connection.endPoint != null) {
-        canvas.drawLine(connection.startPoint, connection.endPoint, paint);
-      }
+      canvas.drawLine(connection.startPoint, connection.endPoint, paint);
     }
 
     if (currentConnectionStart != null && currentConnectionEnd != null) {
@@ -728,9 +780,21 @@ class ConnectionPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ConnectionPainter oldDelegate) {
-    return oldDelegate.connections != connections ||
-        oldDelegate.currentConnectionStart != currentConnectionStart ||
-        oldDelegate.currentConnectionEnd != currentConnectionEnd;
+    return true; // Consider optimizing this based on actual changes in connections or points
+  }
+
+  // Custom method to check hit on a connection
+  Connection? checkHit(Offset position) {
+    final double touchArea = 20.0; // Ensure this is large enough
+    for (Connection connection in connections) {
+      Rect hitZone = connection.getHitZone(touchArea);
+      if (hitZone.contains(position)) {
+        print("Hit detected on: ${connection.startComponentId} to ${connection.endComponentId}");
+        return connection;
+      }
+    }
+    print("No hit detected at position $position, checked zones: ${connections.map((e) => e.getHitZone(touchArea))}");
+    return null;
   }
 }
 
