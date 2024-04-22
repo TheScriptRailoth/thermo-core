@@ -112,7 +112,8 @@ class _ComponentWidgetState extends State<ComponentWidget> {
       ),
     );
   }
-  List<Widget> _buildConnectionPoints() {
+
+    List<Widget> _buildConnectionPoints() {
     double containerSize = 30.0;
     double iconSize = 50.0;
     String inletSvgAssetPath = 'lib/presentation/assets/inlet_icon.svg';
@@ -237,20 +238,29 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 
   void onConnectionStart(ComponentModel component, Offset position, String pointId) {
     RenderBox renderBox = context.findRenderObject() as RenderBox;
-    Offset localPosition = Offset(position.dx + component.connectionPoints[pointId]!.dx,
-        position.dy + component.connectionPoints[pointId]!.dy);
-    Offset globalPosition = renderBox.localToGlobal(localPosition);
+    // Adjust the global position based on the specific connection point offset
+    Offset connectionPointOffset = component.connectionPoints[pointId]!;
+    Offset globalPosition = renderBox.localToGlobal(component.position + connectionPointOffset - Offset(355,28));
 
     setState(() {
       currentConnectionStart = globalPosition;
-      currentConnectionEnd = globalPosition; // This initializes the end at the start
+      currentConnectionEnd = globalPosition;
     });
   }
+
+
+  void updateComponentPosition(ComponentModel component, Offset newPosition) {
+    setState(() {
+      component.position = newPosition;
+      // You might need to update the connection points here as well
+      component.updateConnectionPoints();
+    });
+  }
+
 
   void onConnectionUpdate(DragUpdateDetails details) {
     RenderBox renderBox = context.findRenderObject() as RenderBox;
     Offset localPosition = renderBox.globalToLocal(details.globalPosition);
-
     setState(() {
       currentConnectionEnd = localPosition;
     });
@@ -271,35 +281,36 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   }
 
   void onConnectionEnd() {
+    // Add the connection to the list if it's valid
     if (currentConnectionStart != null && currentConnectionEnd != null) {
-      // Convert currentConnectionEnd from local to global if necessary
-      RenderBox renderBox = context.findRenderObject() as RenderBox;
-      Offset globalEndPosition = renderBox.localToGlobal(currentConnectionEnd!);
-
-      // Find the closest component that is not the start component
-      ComponentModel? startComponent = findComponentByPoint(currentConnectionStart!);
-      ComponentModel? endComponent = findComponentClosestTo(globalEndPosition);
-
-      // Check if the end component is valid and not the same as the start component
-      if (endComponent != null && startComponent != endComponent && isValidConnection(startComponent!, endComponent)) {
-        // Assuming the end component has a method to get its inlet position
-        Offset endPosition = endComponent.connectionPoints['inlet'] ?? endComponent.position;
-
-        // Create a connection to the inlet point of the end component
-        addConnection(new Connection(
-            startPoint: currentConnectionStart!,
-            endPoint: endPosition,
-            startComponentId: startComponent.id,
-            endComponentId: endComponent.id
-        ));
-      }
-
-      // Reset connection points
-      setState(() {
-        currentConnectionStart = null;
-        currentConnectionEnd = null;
-      });
+      connections.add(Connection(
+          startPoint: currentConnectionStart!,
+          endPoint: currentConnectionEnd!,
+          startComponentId: "startId", // Set these appropriately
+          endComponentId: "endId"
+      ));
     }
+    // Reset the drawing connection points
+    setState(() {
+      currentConnectionStart = null;
+      currentConnectionEnd = null;
+    });
+  }
+  void onComponentTap(ComponentModel component) {
+    setState(() {
+      if (selectedComponent != component) {
+        selectedComponent?.isSelected = false;
+        selectedComponent = component;
+        selectedComponent?.isSelected = true;
+      }
+    });
+  }
+
+  void onCanvasTap() {
+    setState(() {
+      selectedComponent?.isSelected = false;
+      selectedComponent = null;
+    });
   }
 
 
@@ -352,6 +363,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                 child: CustomPaint(
                   painter: GridPainter(),
                   child: Stack(
+                    clipBehavior: Clip.none,
                     children: placedComponents.map((component) {
                       return Positioned(
                         left: component.position.dx,
@@ -403,7 +415,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     );
   }
 }
-
 
 class DraggableComponentData {
   final ComponentModel component;
@@ -460,7 +471,11 @@ abstract class ComponentModel {
       'inlet': Offset(0, 40),
       'outlet': Offset(79, 40),
     };
-    print("update connection points called");
+  }
+
+  Offset getGlobalPositionOfConnectionPoint(String pointId, RenderBox renderBox) {
+    Offset localPosition = position + connectionPoints[pointId]!;
+    return renderBox.localToGlobal(localPosition);
   }
 }
 
@@ -468,6 +483,8 @@ class Turbine extends ComponentModel {
   double inletPressure;
   double outletPressure;
   double efficiency;
+  double entropy;
+  double enthalapy;
 
   Turbine({
     required String id,
@@ -477,6 +494,8 @@ class Turbine extends ComponentModel {
     this.inletPressure = 0.0,
     this.outletPressure = 0.0,
     this.efficiency = 0.0,
+    this.enthalapy=0.0,
+    this.entropy=0.0,
   }) : super(id: id, type: "Turbine", position: position, imagePath: 'lib/presentation/assets/turbine_icon.svg');
 
   @override
@@ -484,6 +503,8 @@ class Turbine extends ComponentModel {
     "inletPressure": inletPressure,
     "outletPressure": outletPressure,
     "efficiency": efficiency,
+    "enthalapy" : enthalapy,
+    "entropy" : entropy,
   };
 
   @override
@@ -495,6 +516,8 @@ class Turbine extends ComponentModel {
     double? inletPressure,
     double? outletPressure,
     double? efficiency,
+    double? enthalapy,
+    double? entropy,
   }) {
     return Turbine(
       id: id ?? this.id,
@@ -504,6 +527,8 @@ class Turbine extends ComponentModel {
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
       efficiency: efficiency ?? this.efficiency,
+      enthalapy: enthalapy?? this.enthalapy,
+      entropy: entropy?? this.entropy,
     );
   }
 }
@@ -511,6 +536,8 @@ class Boiler extends ComponentModel{
   double inletPressure;
   double outletPressure;
   double efficiency;
+  double enthalapy;
+  double entropy;
 
   Boiler({
     required String id,
@@ -520,6 +547,8 @@ class Boiler extends ComponentModel{
     this.inletPressure = 0.0,
     this.outletPressure = 0.0,
     this.efficiency = 0.0,
+    this.entropy = 0.0,
+    this.enthalapy=0.0,
   }):super(id: id, type: "Boiler", position: position, imagePath: 'lib/presentation/assets/boiler_icon.svg');
 
   @override
@@ -527,6 +556,8 @@ class Boiler extends ComponentModel{
     "inletPressure": inletPressure,
     "outletPressure": outletPressure,
     "efficiency": efficiency,
+    "enthalapy" : enthalapy,
+    "entropy" : entropy,
   };
 
   @override
@@ -538,6 +569,8 @@ class Boiler extends ComponentModel{
     double? inletPressure,
     double? outletPressure,
     double? efficiency,
+    double? enthalapy,
+    double? entropy,
   }) {
     return Boiler(
       id: id ?? this.id,
@@ -547,6 +580,8 @@ class Boiler extends ComponentModel{
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
       efficiency: efficiency ?? this.efficiency,
+      entropy: entropy?? this.entropy,
+      enthalapy: enthalapy?? this.enthalapy,
     );
   }
 }
@@ -554,6 +589,8 @@ class Precipitator extends ComponentModel{
   double inletPressure;
   double outletPressure;
   double efficiency;
+  double entropy;
+  double enthalapy;
 
   Precipitator({
     required String id,
@@ -563,6 +600,8 @@ class Precipitator extends ComponentModel{
     this.inletPressure = 0.0,
     this.outletPressure = 0.0,
     this.efficiency = 0.0,
+    this.entropy = 0.0,
+    this.enthalapy =0.0,
   }):super(id: id, type: "Precipitator", position: position, imagePath: 'lib/presentation/assets/precipitator_icon.svg');
 
   @override
@@ -570,6 +609,7 @@ class Precipitator extends ComponentModel{
     "inletPressure": inletPressure,
     "outletPressure": outletPressure,
     "efficiency": efficiency,
+    ""
   };
 
   @override
@@ -654,14 +694,13 @@ class Connection {
     required this.startPoint,
     required this.endPoint,
     required this.startComponentId,
-    required this.endComponentId,
-  });
+    required this.endComponentId});
 }
 
 class ConnectionPainter extends CustomPainter {
-  final List<Connection> connections;
-  final Offset? currentConnectionStart;
-  final Offset? currentConnectionEnd;
+  List<Connection> connections;
+  Offset? currentConnectionStart;
+  Offset? currentConnectionEnd;
 
   ConnectionPainter({
     required this.connections,
@@ -675,13 +714,10 @@ class ConnectionPainter extends CustomPainter {
       ..color = Colors.red
       ..strokeWidth = 2;
 
-    // Debug: Print number of connections
-    print("Drawing ${connections.length} connections.");
-
-    for (var connection in connections) {
-      // Debug: Print connection details
-      print('Drawing connection from ${connection.startPoint} to ${connection.endPoint}');
-      canvas.drawLine(connection.startPoint, connection.endPoint, paint);
+    for (Connection connection in connections) {
+      if (connection.startPoint != null && connection.endPoint != null) {
+        canvas.drawLine(connection.startPoint, connection.endPoint, paint);
+      }
     }
 
     if (currentConnectionStart != null && currentConnectionEnd != null) {
@@ -692,7 +728,9 @@ class ConnectionPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ConnectionPainter oldDelegate) {
-    return true; // Always repaint for simplicity
+    return oldDelegate.connections != connections ||
+        oldDelegate.currentConnectionStart != currentConnectionStart ||
+        oldDelegate.currentConnectionEnd != currentConnectionEnd;
   }
 }
 
