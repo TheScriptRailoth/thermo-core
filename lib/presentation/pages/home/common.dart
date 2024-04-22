@@ -309,6 +309,32 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     });
   }
 
+  void _showContextMenuConnectionLine(BuildContext context, Offset position, Connection connection) {
+    final RelativeRect positionRect = RelativeRect.fromLTRB(
+        position.dx, position.dy, position.dx, position.dy);  // Positioning the menu
+
+    showMenu(
+        context: context,
+        position: positionRect,  // Show menu at the position of the right click
+        items: <PopupMenuEntry>[
+          PopupMenuItem(
+            value: 'delete',
+            child: Text('Delete Connection'),
+          ),
+        ]
+    ).then((value) {
+      if (value == 'delete') {
+        _deleteConnectionLine(connection);
+      }
+    });
+  }
+  void _deleteConnectionLine(Connection connection) {
+    setState(() {
+      connections.removeWhere((conn) => conn == connection);
+      // Re-render the CustomPainter by updating its state
+    });
+  }
+
   void onCanvasTap() {
     setState(() {
       selectedComponent?.isSelected = false;
@@ -345,6 +371,16 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
           print("Tap position: $localPosition did not hit any connections.");
         }
       },
+
+      onSecondaryTapUp: (details) {
+        final RenderBox renderBox = context.findRenderObject() as RenderBox;
+        final Offset localPosition = renderBox.globalToLocal(details.globalPosition);
+        final Connection? tappedConnection = _connectionPainter.checkHit(localPosition);
+        if (tappedConnection != null) {
+          _showContextMenuConnectionLine(context, details.globalPosition, tappedConnection);
+        }
+      },
+
       child: CustomPaint(
           painter: GridPainter(),
           foregroundPainter: ConnectionPainter(
@@ -780,7 +816,7 @@ class ConnectionPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ConnectionPainter oldDelegate) {
-    return true; // Consider optimizing this based on actual changes in connections or points
+    return true;
   }
 
   // Custom method to check hit on a connection
