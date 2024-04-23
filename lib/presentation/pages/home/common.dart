@@ -217,7 +217,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 
   final GlobalKey _canvasKey = GlobalKey();
 
-
   Offset? currentConnectionStart;
   Offset? currentConnectionEnd;
 
@@ -345,28 +344,33 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   }
 
   void _showContextMenuConnectionLine(BuildContext context, Offset position, Connection connection) {
-    final RelativeRect positionRect = RelativeRect.fromLTRB(
-        position.dx, position.dy, position.dx, position.dy);  // Positioning the menu
+    print("Context menu triggered for connection from ${connection.startComponentId} to ${connection.endComponentId}");
+    final RelativeRect positionRect = RelativeRect.fromLTRB(position.dx, position.dy, position.dx, position.dy);
 
     showMenu(
         context: context,
-        position: positionRect,  // Show menu at the position of the right click
+        position: positionRect,
         items: <PopupMenuEntry>[
           PopupMenuItem(
             value: 'delete',
             child: Text('Delete Connection'),
+            onTap: () {
+              print("Delete tapped");
+            },
           ),
         ]
     ).then((value) {
       if (value == 'delete') {
+        print("Deleting connection");
         _deleteConnectionLine(connection);
       }
     });
   }
+
   void _deleteConnectionLine(Connection connection) {
     setState(() {
       connections.removeWhere((conn) => conn == connection);
-      // Re-render the CustomPainter by updating its state
+      print("Connection deleted, remaining connections: ${connections.length}");
     });
   }
 
@@ -380,7 +384,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   @override
   void initState() {
     super.initState();
-    _connectionPainter = ConnectionPainter(connections: connections);
+    _connectionPainter = ConnectionPainter(connections: connections, contentValue: connections.length);
   }
 
   @override
@@ -422,6 +426,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
             connections: connections,
             currentConnectionStart: currentConnectionStart,
             currentConnectionEnd: currentConnectionEnd,
+            contentValue: connections.length,
           ),
           child: DragTarget<DraggableComponentData>(
             onWillAccept: (data) => true,
@@ -535,7 +540,8 @@ abstract class ComponentModel {
   Offset position;
   bool isSelected = false;
   Map<String, Offset> connectionPoints;
-  Map<String, ConnectionEndpoint?> connectedTo={};
+  List<Connection> connections = [];
+
 
   ComponentModel copyWith({
     String? id,
@@ -573,6 +579,14 @@ abstract class ComponentModel {
       print("Hit detected at inlet at $inletPosition");
     }
     return hit;
+  }
+
+  void addConnection(Connection connection) {
+    connections.add(connection);
+  }
+
+  void removeConnection(Connection connection) {
+    connections.removeWhere((c) => c == connection);
   }
 
 }
@@ -620,7 +634,6 @@ class Turbine extends ComponentModel {
     return Turbine(
       id: id ?? this.id,
       position: position ?? this.position,
-      connectedTo: connectedTo ?? this.connectedTo,
 
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
@@ -673,7 +686,6 @@ class Boiler extends ComponentModel{
     return Boiler(
       id: id ?? this.id,
       position: position ?? this.position,
-      connectedTo: connectedTo ?? this.connectedTo,
 
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
@@ -726,7 +738,6 @@ class Precipitator extends ComponentModel{
     return Precipitator(
       id: id ?? this.id,
       position: position ?? this.position,
-      connectedTo: connectedTo ?? this.connectedTo,
 
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
@@ -779,7 +790,6 @@ class WaterPump extends ComponentModel{
     return WaterPump(
       id: id ?? this.id,
       position: position ?? this.position,
-      connectedTo: connectedTo ?? this.connectedTo,
 
       inletPressure: inletPressure ?? this.inletPressure,
       outletPressure: outletPressure ?? this.outletPressure,
@@ -810,7 +820,6 @@ class Connection {
     required this.endComponentId});
 
   Rect getHitZone(double touchWidth) {
-    // Define a thicker line for easier hit detection
     final double halfWidth = touchWidth / 2;
     final Offset direction = endPoint - startPoint;
     final double length = direction.distance;
@@ -830,15 +839,22 @@ class Connection {
 
     return Rect.fromLTRB(left, top, right, bottom);
   }
+
+  Map<String, dynamic> calculateProperties() {
+    // Logic to use startComponent and endComponent properties to calculate
+    return {};
+  }
 }
 
 class ConnectionPainter extends CustomPainter {
   List<Connection> connections;
   Offset? currentConnectionStart;
   Offset? currentConnectionEnd;
+  final int contentValue;
 
   ConnectionPainter({
     required this.connections,
+    required this.contentValue,
     this.currentConnectionStart,
     this.currentConnectionEnd,
   });
@@ -864,7 +880,6 @@ class ConnectionPainter extends CustomPainter {
     return true;
   }
 
-  // Custom method to check hit on a connection
   Connection? checkHit(Offset position) {
     final double touchArea = 20.0; // Ensure this is large enough
     for (Connection connection in connections) {
