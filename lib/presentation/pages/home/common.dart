@@ -5,6 +5,8 @@ import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
 import 'home_screen.dart';
 enum ComponentType { Turbine, Boiler, Precipitator, WaterPump, Inlet}
+ComponentModel? startComponent;
+ComponentModel? endComponent;
 
 class GridPainter extends CustomPainter {
   double gridCellSize = 20.0;
@@ -240,15 +242,16 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 
   void onConnectionStart(ComponentModel component, Offset position, String pointId) {
     RenderBox renderBox = context.findRenderObject() as RenderBox;
-    // Adjust the global position based on the specific connection point offset
     Offset connectionPointOffset = component.connectionPoints[pointId]!;
-    Offset globalPosition = renderBox.localToGlobal(component.position + connectionPointOffset - Offset(355,28));
+    Offset globalPosition = renderBox.localToGlobal(component.position + connectionPointOffset - Offset(355, 28));
 
     setState(() {
       currentConnectionStart = globalPosition;
       currentConnectionEnd = globalPosition;
+      startComponent = component;  // Set the starting component
     });
   }
+
 
   void updateComponentPosition(ComponentModel component, Offset newPosition) {
     setState(() {
@@ -303,12 +306,15 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 
   void onConnectionEnd() {
     if (currentConnectionStart != null && currentConnectionEnd != null) {
-      if (isEndPointValid(currentConnectionEnd!)) {
+      // Find the component that includes the end point
+      endComponent = findComponentClosestTo(currentConnectionEnd!);
+
+      if (endComponent != null && isEndPointValid(currentConnectionEnd!)) {
         addConnection(Connection(
             startPoint: currentConnectionStart!,
             endPoint: currentConnectionEnd!,
-            startComponentId: "startId",  // Set appropriately
-            endComponentId: "endId"       // Set appropriately
+            startComponentId: startComponent?.id ?? '',  // Ensure the start component's ID is set
+            endComponentId: endComponent?.id ?? ''      // Set the end component's ID
         ));
       } else {
         showDialog(
@@ -324,7 +330,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
               ],
             )
         );
-        // Reset the connection drawing if invalid
+        // Reset if invalid
         setState(() {
           currentConnectionStart = null;
           currentConnectionEnd = null;
@@ -332,6 +338,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       }
     }
   }
+
 
   void onComponentTap(ComponentModel component) {
     setState(() {
@@ -372,6 +379,31 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       connections.removeWhere((conn) => conn == connection);
       print("Connection deleted, remaining connections: ${connections.length}");
     });
+  }
+
+  void createConnection(String startComponentId, String endComponentId, Offset startPoint, Offset endPoint) {
+    ComponentModel startComponent = placedComponents.firstWhere((comp) => comp.id == startComponentId);
+    ComponentModel endComponent = placedComponents.firstWhere((comp) => comp.id == endComponentId);
+
+    Connection newConnection = Connection(
+      startComponentId: startComponent.id,
+      endComponentId: endComponent.id,
+      startPoint: startPoint,
+      endPoint: endPoint,
+    );
+
+    setState(() {
+      connections.add(newConnection);
+      // Optionally update the connected components
+      startComponent.addConnection(newConnection);
+      endComponent.addConnection(newConnection);
+    });
+
+    print('Connection added:');
+    print('Start Component: ${startComponent.type} (ID: ${startComponent.id})');
+    print('End Component: ${endComponent.type} (ID: ${endComponent.id})');
+    print('Start Point: ${newConnection.startPoint}');
+    print('End Point: ${newConnection.endPoint}');
   }
 
   void onCanvasTap() {
