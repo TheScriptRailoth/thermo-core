@@ -304,7 +304,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
             currentConnectionStart!,
             currentConnectionEnd!
         );
-        checkAndPrintCycleCompletion();
+        ShowAlertOnCycleCompletion();
       } else {
         showDialog(
             context: context,
@@ -393,9 +393,25 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     print('End Point: ${newConnection.endPoint}');
   }
 
-  void ShowAlertonCycleCompletion() {
+  void ShowAlertOnCycleCompletion() {
     if (isCycleComplete()) {
-      print("Cycle is complete. Connections are as follows:");
+      print("Cycle is complete.");
+      showDialog(context: context, 
+          builder: (BuildContext context){
+              return AlertDialog(
+                title: Text("Cycle Complete"),
+                content: Text("The cycle has been successfully completed."),
+                actions: <Widget>[
+                  TextButton(
+                    child: Text("OK"),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Close the dialog
+                    },
+                  ),
+                ],
+              );
+          }
+      );
     }
   }
   bool isCycleComplete() {
