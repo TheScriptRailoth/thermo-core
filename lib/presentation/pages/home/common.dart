@@ -184,6 +184,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   List<Connection> connections = [];
   ComponentModel ?selectedComponent;
 
+
   late ConnectionPainter _connectionPainter;
 
 
@@ -303,6 +304,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
             currentConnectionStart!,
             currentConnectionEnd!
         );
+        checkAndPrintCycleCompletion();
       } else {
         showDialog(
             context: context,
@@ -389,6 +391,53 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     print('End Component: ${endComponent.type} (ID: ${endComponent.id})');
     print('Start Point: ${newConnection.startPoint}');
     print('End Point: ${newConnection.endPoint}');
+  }
+
+  void ShowAlertonCycleCompletion() {
+    if (isCycleComplete()) {
+      print("Cycle is complete. Connections are as follows:");
+    }
+  }
+  bool isCycleComplete() {
+    if (connections.isEmpty || placedComponents.isEmpty) return false;
+
+    // Map each component to its connections
+    Map<String, List<String>> graph = {};
+    for (var connection in connections) {
+      graph.putIfAbsent(connection.startComponentId, () => []);
+      graph.putIfAbsent(connection.endComponentId, () => []);
+      graph[connection.startComponentId]!.add(connection.endComponentId);
+    }
+
+    Set<String> visited = {};
+    bool hasCycle = false;
+
+    String startComponent = connections.first.startComponentId;
+
+    // DFS to detect a cycle
+    bool dfs(String node, String parent) {
+      if (visited.contains(node)) {
+        return node == startComponent; // Return true if it comes back to the start
+      }
+
+      visited.add(node);
+      for (var neighbor in graph[node]!) {
+        if (neighbor != parent) { // Avoid going back to the parent node
+          if (dfs(neighbor, node)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // Check for cycle starting from the first component
+    hasCycle = dfs(startComponent, "");
+
+    // Ensure all components were visited (i.e., all are connected)
+    bool allVisited = placedComponents.every((comp) => visited.contains(comp.id));
+
+    return hasCycle && allVisited;
   }
 
   void onCanvasTap() {
