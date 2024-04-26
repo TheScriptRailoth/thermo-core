@@ -72,6 +72,15 @@ class _ComponentWidgetState extends State<ComponentWidget> {
           widget.onDelete(widget.component);
         },
       ),
+      MenuItem(
+        label: 'Flip',
+        icon: Icons.flip,
+        onSelected: () {
+          setState(() {
+            widget.component.flip();
+          });
+        },
+      ),
     ];
     return ContextMenuRegion(
       contextMenu: ContextMenu(entries: entries),
@@ -163,10 +172,14 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                 borderRadius: BorderRadius.circular(10),
                 border: isHovered ? Border.all(color: Colors.blue, width: 2) : Border.all(color: Colors.transparent),
               ),
-              child: SvgPicture.asset(
-                svgAssetPath,
-                width: iconSize,
-                height: iconSize,
+              child: Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.rotationY(widget.component.isFlipped ? pi : 0),
+                child: SvgPicture.asset(
+                  svgAssetPath,
+                  width: iconSize,
+                  height: iconSize,
+                ),
               ),
             ),
           ),
@@ -397,8 +410,13 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       showDialog(context: context, 
           builder: (BuildContext context){
               return AlertDialog(
-                title: const Text("Cycle Complete"),
-                content: const Text("The cycle has been successfully completed."),
+                title: Row(
+                  children: [
+                    Icon(Icons.check, color: Colors.green, size: 30,),
+                    const Text("Cycle Complete"),
+                  ],
+                ),
+                content: const Text("The cycle has been successfully completed. \nNow you can edit the properties"),
                 actions: <Widget>[
                   TextButton(
                     child: const Text("OK"),
@@ -520,7 +538,31 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
         final Connection? tappedConnection = _connectionPainter.checkHit(localPosition);
         if (tappedConnection != null) {
           print("Tapped on connection from ${tappedConnection.startComponentId} to ${tappedConnection.endComponentId}");
+          if(isCycleComplete())
           _showOverlay(context);
+          else{
+            showDialog(
+                context: context, builder: (BuildContext context){
+                  return AlertDialog(
+                    title: Row(
+                      children: [
+                        Icon(Icons.warning_amber_outlined),
+                        Text(" Cycle is not complete yet "),
+                      ],
+                    ),
+                    content: Text("Complete the cycle first then you will be able to edit properties."),
+                    actions: <Widget>[
+                      TextButton(
+                        child: const Text("OK"),
+                        onPressed: () {
+                          Navigator.of(context).pop(); // Close the dialog
+                        },
+                      ),
+                    ],
+                  );
+            }
+            );
+          }
         } else {
           print("Tap position: $localPosition did not hit any connections.");
         }
@@ -649,6 +691,8 @@ class ComponentFactory {
 }
 
 abstract class ComponentModel {
+  bool isFlipped =false;
+
   final String id;
   final String type;
   final String imagePath;
@@ -674,11 +718,24 @@ abstract class ComponentModel {
 
   Map<String, dynamic> get properties;
 
+  void flip() {
+    isFlipped = !isFlipped;
+    updateConnectionPoints();
+  }
+
   void updateConnectionPoints() {
-    connectionPoints = {
-      'inlet': Offset(0, 40),
-      'outlet': Offset(79, 40),
-    };
+    if(isFlipped){
+      connectionPoints = {
+        'outlet': Offset(0, 40),
+        'inlet': Offset(79, 40),
+      };
+    }else {
+      connectionPoints = {
+        'inlet': Offset(0, 40),
+        'outlet': Offset(79, 40),
+      };
+    }
+
   }
 
   Offset getGlobalPositionOfConnectionPoint(String pointId, RenderBox renderBox) {
