@@ -2,9 +2,7 @@ import 'package:edurank/presentation/pages/home/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:menu_bar/menu_bar.dart';
-void main() => runApp(const MyApp());
-// GlobalKey<_RankineCycleCanvasState> rankineCanvasKey = GlobalKey();
-
+void main()=>runApp(MyApp());
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 

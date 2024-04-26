@@ -39,7 +39,7 @@ class ComponentSidebar extends StatelessWidget {
           Flexible(
             child: GridView.builder(
               itemCount: components.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 1,
                 mainAxisSpacing: 10,
@@ -51,12 +51,12 @@ class ComponentSidebar extends StatelessWidget {
                   data: DraggableComponentData(createComponent(componentsTitle[index]), isNew: true),
                   feedback: Material(
                     borderRadius: BorderRadius.circular(10),
+                    elevation: 4.0,
                     child: ComponentWidget(
                       component: componentModel,
                       onSelect: doNothing,
                       onDelete: doNothing, onConnectionStart: (ComponentModel , Offset , String ) {  }, onConnectionUpdate: (Offset ) {  }, onConnectionEnd: () {  },
                     ),
-                    elevation: 4.0,
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
@@ -86,7 +86,7 @@ class ComponentSidebar extends StatelessWidget {
               },
             ),
           ),
-          SizedBox(height: 20,),
+          const SizedBox(height: 20,),
           Container(
             color: Colors.greenAccent,
             width: 300,

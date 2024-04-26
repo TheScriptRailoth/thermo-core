@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   bitsdojo_window_linux
+  desktop_multi_window
   flutter_acrylic
   screen_retriever
   system_theme

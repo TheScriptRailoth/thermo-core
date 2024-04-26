@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:math';
+import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
@@ -190,11 +192,9 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 
   void _selectComponent(ComponentModel component) {
     setState(() {
-      // Deselect all components
       for (var comp in placedComponents) {
         comp.isSelected = false;
       }
-      // Select the tapped component
       component.isSelected = true;
       selectedComponent = component;
       print('Selected component: ${component.id}');
@@ -216,7 +216,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     for (var component in placedComponents) {
       Rect bounds = Rect.fromCenter(
           center: component.position,
-          width: 70,  // Assuming width and height of the component visuals
+          width: 70,
           height: 70
       );
       if (bounds.contains(point)) {
@@ -245,7 +245,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   void updateComponentPosition(ComponentModel component, Offset newPosition) {
     setState(() {
       component.position = newPosition;
-      // You might need to update the connection points here as well
       component.updateConnectionPoints();
     });
   }
@@ -265,7 +264,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   }
 
   ComponentModel? findComponentClosestTo(Offset point) {
-    // This function needs to determine the closest component, optionally focusing on valid inlets
     double closestDist = double.infinity;
     ComponentModel? closestComp;
     for (var component in placedComponents) {
@@ -279,10 +277,9 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   }
 
   bool isEndPointValid(Offset endPoint) {
-    // This function now uses the placedComponents directly since it's within the same class
     for (var component in placedComponents) {
       Offset inletPosition = component.position + component.connectionPoints['inlet']!;
-      double hitRadius = 20.0; // Adjust the hit radius as needed
+      double hitRadius = 20.0;
 
       if ((endPoint - inletPosition).distance <= hitRadius) {
         print("Valid inlet found at ${component.position}");
@@ -399,11 +396,11 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       showDialog(context: context, 
           builder: (BuildContext context){
               return AlertDialog(
-                title: Text("Cycle Complete"),
-                content: Text("The cycle has been successfully completed."),
+                title: const Text("Cycle Complete"),
+                content: const Text("The cycle has been successfully completed."),
                 actions: <Widget>[
                   TextButton(
-                    child: Text("OK"),
+                    child: const Text("OK"),
                     onPressed: () {
                       Navigator.of(context).pop(); // Close the dialog
                     },
@@ -456,6 +453,48 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     return hasCycle && allVisited;
   }
 
+
+  late OverlayEntry overlayEntry;
+  void _showOverlay(BuildContext context, Connection connection) {
+    overlayEntry = OverlayEntry(
+      builder: (context) => Positioned(
+        top: 100,
+        left: 100,
+        width: 300,
+        child: Material(
+          elevation: 2,
+          borderRadius: BorderRadius.circular(10),
+          child: Column(
+            children: <Widget>[
+              AppBar(
+                title: Text("Edit Connection", style: TextStyle( fontSize: 24, fontWeight: FontWeight.bold),),
+                actions: [
+                  IconButton(
+                    icon: Icon(Icons.close),
+                    onPressed: () => overlayEntry.remove(),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    Text("Start Point: ${connection.startPoint}"),
+                    Text("End Point: ${connection.endPoint}"),
+                    // Additional fields
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    Overlay.of(context).insert(overlayEntry);
+  }
+
+
+
   void onCanvasTap() {
     setState(() {
       selectedComponent?.isSelected = false;
@@ -488,6 +527,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
         final Connection? tappedConnection = _connectionPainter.checkHit(localPosition);
         if (tappedConnection != null) {
           print("Tapped on connection from ${tappedConnection.startComponentId} to ${tappedConnection.endComponentId}");
+          _showOverlay(context, tappedConnection);
         } else {
           print("Tap position: $localPosition did not hit any connections.");
         }
