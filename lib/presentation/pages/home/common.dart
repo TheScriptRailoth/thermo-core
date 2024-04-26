@@ -471,7 +471,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       builder: (context) => Positioned(
         top: overlayPosition.dy,
         left: overlayPosition.dx,
-        width: 300,
+        width: 400,
         child: Material(
           elevation: 2,
           borderRadius: BorderRadius.circular(10),
@@ -485,7 +485,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
         ),
       ),
     );
-    Overlay.of(context)?.insert(overlayEntry!);
+    Overlay.of(context).insert(overlayEntry!);
   }
 
   void onCanvasTap() {
