@@ -259,11 +259,27 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   }
 
   void updateComponentPosition(ComponentModel component, Offset newPosition) {
+    print("updateComponentPosition Called");
     setState(() {
       component.position = newPosition;
       component.updateConnectionPoints();
+      updateConnectionsForComponent(component);
     });
   }
+  void updateConnectionsForComponent(ComponentModel component) {
+    for (Connection conn in connections) {
+      if (conn.startComponentId == component.id) {
+        RenderBox renderBox = context.findRenderObject() as RenderBox;
+        conn.startPoint = component.getGlobalPositionOfConnectionPoint('outlet', renderBox);
+      }
+      if (conn.endComponentId == component.id) {
+        RenderBox renderBox = context.findRenderObject() as RenderBox;
+        conn.endPoint = component.getGlobalPositionOfConnectionPoint('inlet', renderBox);
+      }
+    }
+    (context as Element).markNeedsBuild();
+  }
+
 
   void onConnectionUpdate(DragUpdateDetails details) {
     RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
@@ -648,6 +664,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                                 if (index != -1) {
                                   var updatedComponent = component.copyWith(position: snappedPosition);
                                   placedComponents[index] = updatedComponent;
+                                  updateComponentPosition(updatedComponent, snappedPosition);
                                 }
                               });
                             },
@@ -741,9 +758,13 @@ abstract class ComponentModel {
   }
 
   Offset getGlobalPositionOfConnectionPoint(String pointId, RenderBox renderBox) {
+    if (!renderBox.hasSize) {
+      return Offset.zero;
+    }
     Offset localPosition = position + connectionPoints[pointId]!;
-    return renderBox.localToGlobal(localPosition);
+    return renderBox.localToGlobal(localPosition) - Offset(355, 28);
   }
+
 
   bool hitTest(Offset point) {
     Offset inletPosition = position + connectionPoints['inlet']!;
