@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
+import 'package:edurank/presentation/pages/home/DraggableWindow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
@@ -454,46 +455,38 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   }
 
 
-  late OverlayEntry overlayEntry;
-  void _showOverlay(BuildContext context, Connection connection) {
+  OverlayEntry? overlayEntry;
+  Offset overlayPosition = Offset(100, 100);
+  void _updateOverlayPosition(DragUpdateDetails details) {
+      overlayPosition += details.delta;
+      overlayEntry?.markNeedsBuild();
+  }
+
+  void _showOverlay(BuildContext context) {
+    if (overlayEntry != null) {
+      overlayEntry!.remove();
+      overlayEntry = null;
+    }
     overlayEntry = OverlayEntry(
       builder: (context) => Positioned(
-        top: 100,
-        left: 100,
+        top: overlayPosition.dy,
+        left: overlayPosition.dx,
         width: 300,
         child: Material(
           elevation: 2,
           borderRadius: BorderRadius.circular(10),
-          child: Column(
-            children: <Widget>[
-              AppBar(
-                title: Text("Edit Connection", style: TextStyle( fontSize: 24, fontWeight: FontWeight.bold),),
-                actions: [
-                  IconButton(
-                    icon: Icon(Icons.close),
-                    onPressed: () => overlayEntry.remove(),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    Text("Start Point: ${connection.startPoint}"),
-                    Text("End Point: ${connection.endPoint}"),
-                    // Additional fields
-                  ],
-                ),
-              ),
-            ],
+          child: PropertyEditWindow(
+            onClose: () {
+              overlayEntry?.remove();
+              overlayEntry = null;
+            },
+            onDrag: _updateOverlayPosition,
           ),
         ),
       ),
     );
-    Overlay.of(context).insert(overlayEntry);
+    Overlay.of(context)?.insert(overlayEntry!);
   }
-
-
 
   void onCanvasTap() {
     setState(() {
@@ -527,7 +520,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
         final Connection? tappedConnection = _connectionPainter.checkHit(localPosition);
         if (tappedConnection != null) {
           print("Tapped on connection from ${tappedConnection.startComponentId} to ${tappedConnection.endComponentId}");
-          _showOverlay(context, tappedConnection);
+          _showOverlay(context);
         } else {
           print("Tap position: $localPosition did not hit any connections.");
         }
