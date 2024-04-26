@@ -138,6 +138,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
       final key = entry.key;
       final position = entry.value;
       String svgAssetPath = key == 'inlet' ? inletSvgAssetPath : outletSvgAssetPath;
+      Color svgColor = key== 'inlet' ? Color(0xff006633) : Color(0xff0000FF);
       double left = position.dx - (containerSize / 2);
       double top = position.dy - (containerSize / 2);
 
@@ -179,6 +180,7 @@ class _ComponentWidgetState extends State<ComponentWidget> {
                   svgAssetPath,
                   width: iconSize,
                   height: iconSize,
+                  color: svgColor,
                 ),
               ),
             ),
