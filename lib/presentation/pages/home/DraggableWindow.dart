@@ -1,16 +1,62 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
-class PropertyEditWindow extends StatelessWidget {
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class PropertyEditWindow extends StatefulWidget {
   final VoidCallback onClose;
   final void Function(DragUpdateDetails) onDrag;
 
-  const PropertyEditWindow({super.key, required this.onClose, required this.onDrag});
+  const PropertyEditWindow({
+    super.key,
+    required this.onClose,
+    required this.onDrag,
+  });
+
+  @override
+  State<PropertyEditWindow> createState() => _PropertyEditWindowState();
+}
+
+class _PropertyEditWindowState extends State<PropertyEditWindow> {
+  TextEditingController _pressureController = TextEditingController();
+  TextEditingController _tempController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _tempController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _tempController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    TextEditingController _pressureController = TextEditingController();
-    TextEditingController _tempController = TextEditingController();
+
+    void fetchProperties(String pressure, String temperature) async {
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:5000/calculate'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'P_boiler': double.parse(pressure),
+          'T_turbine_inlet': double.parse(temperature),
+          'P_condenser': double.parse("50"),
+          'eta_turbine': 1.0,
+          'eta_pump': 1.0,
+        }),
+      );
+      if (response.statusCode == 200) {
+        var result = jsonDecode(response.body);
+        print(result);
+      } else {
+        throw Exception('Failed to load properties with status code: ${response.statusCode}');
+      }
+    }
+
     return Container(
       width: 500,
       height: 400,
@@ -21,14 +67,14 @@ class PropertyEditWindow extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children:[
             GestureDetector(
-              onPanUpdate: onDrag,
+              onPanUpdate: widget.onDrag,
               child: AppBar(
                 title: Text("Properties", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20),),
                 automaticallyImplyLeading: false,
                 actions: [
                   IconButton(
                     icon: Icon(Icons.close),
-                    onPressed: onClose,
+                    onPressed: widget.onClose,
                   ),
                 ],
               ),
@@ -43,7 +89,7 @@ class PropertyEditWindow extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
@@ -105,7 +151,12 @@ class PropertyEditWindow extends StatelessWidget {
                               ],
                             ),
                             SizedBox(height: 10,),
-                            Text("655 J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                            Row(
+                              children: [
+                                Text("", style: TextStyle(color: Colors.black, fontSize: 16,),),
+                                Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                              ],
+                            ),
                             SizedBox(height: 10,),
                             Text("6546 J" , style: TextStyle(color: Colors.black, fontSize: 16,),),
                             SizedBox(height: 10,),
@@ -122,9 +173,13 @@ class PropertyEditWindow extends StatelessWidget {
                 ),
               ),
             ),
+            Padding( padding: EdgeInsets.symmetric(vertical: 10),child: ElevatedButton(onPressed: (){
+              fetchProperties("1500", "500");
+            }, child: Text("Save", style: TextStyle(color: Colors.black),)))
           ],
         ),
       ),
     );
   }
 }
+

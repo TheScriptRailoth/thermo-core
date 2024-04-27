@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
-import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:edurank/presentation/pages/home/DraggableWindow.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
 import 'home_screen.dart';
+import 'package:http/http.dart' as http;
 
 enum ComponentType { Turbine, Boiler, Precipitator, WaterPump, Inlet}
 ComponentModel? startComponent;
@@ -280,7 +280,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     (context as Element).markNeedsBuild();
   }
 
-
   void onConnectionUpdate(DragUpdateDetails details) {
     RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
     Offset localPosition = renderBoxCanvas.globalToLocal(details.globalPosition);
@@ -490,7 +489,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     return hasCycle && allVisited;
   }
 
-
   OverlayEntry? overlayEntry;
   Offset overlayPosition = Offset(100, 100);
   void _updateOverlayPosition(DragUpdateDetails details) {
@@ -515,6 +513,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
             onClose: () {
               overlayEntry?.remove();
               overlayEntry = null;
+
             },
             onDrag: _updateOverlayPosition,
           ),
@@ -658,7 +657,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
                               final Offset localOffsetCanvas = renderBoxCanvas.globalToLocal(dragDetails.offset);
                               final Offset snappedPosition = snapToGrid(localOffsetCanvas - const Offset(35, 35));
 
-
                               setState(() {
                                 var index = placedComponents.indexWhere((comp) => comp.id == component.id);
                                 if (index != -1) {
@@ -720,7 +718,6 @@ abstract class ComponentModel {
   Map<String, Offset> connectionPoints;
   List<Connection> connections = [];
 
-
   ComponentModel copyWith({
     String? id,
     Offset? position,
@@ -731,6 +728,7 @@ abstract class ComponentModel {
     required this.type,
     required this.position,
     required this.imagePath,
+
   }) : connectionPoints = {} {
     updateConnectionPoints();
   }
@@ -764,7 +762,6 @@ abstract class ComponentModel {
     Offset localPosition = position + connectionPoints[pointId]!;
     return renderBox.localToGlobal(localPosition) - Offset(355, 28);
   }
-
 
   bool hitTest(Offset point) {
     Offset inletPosition = position + connectionPoints['inlet']!;
