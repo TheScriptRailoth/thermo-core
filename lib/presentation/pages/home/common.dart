@@ -319,12 +319,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     setState(() {
       currentConnectionEnd = localPosition;
     });
-
-    if (!isEndPointValid(localPosition)) {
-      print("Dropped outside a valid inlet");
-    } else {
-      print("Dropped on a valid inlet");
-    }
   }
 
   ComponentModel? findComponentClosestTo(Offset point) {
@@ -827,8 +821,8 @@ abstract class ComponentModel {
 }
 
 class Turbine extends ComponentModel {
-  double inletPressure;
-  double outletPressure;
+  double temprature;
+  double pressure;
   double efficiency;
   double entropy;
   double enthalapy;
@@ -837,9 +831,8 @@ class Turbine extends ComponentModel {
     required String id,
     Offset position = Offset.zero,
     Map<String, ConnectionEndpoint?> connectedTo = const {},
-
-    this.inletPressure = 0.0,
-    this.outletPressure = 0.0,
+    this.temprature=0.0,
+    this.pressure=0.0,
     this.efficiency = 0.0,
     this.enthalapy=0.0,
     this.entropy=0.0,
@@ -847,11 +840,11 @@ class Turbine extends ComponentModel {
 
   @override
   Map<String, dynamic> get properties => {
-    "inletPressure": inletPressure,
-    "outletPressure": outletPressure,
+    "pressure": pressure,
     "efficiency": efficiency,
     "enthalapy" : enthalapy,
     "entropy" : entropy,
+    "temperature" : temprature,
   };
 
   @override
@@ -860,28 +853,37 @@ class Turbine extends ComponentModel {
     Offset? position,
     Map<String, ConnectionEndpoint?>? connectedTo,
 
-    double? inletPressure,
-    double? outletPressure,
+    double? pressure,
     double? efficiency,
     double? enthalapy,
     double? entropy,
+    double? temprature,
   }) {
     return Turbine(
       id: id ?? this.id,
       position: position ?? this.position,
-
-      inletPressure: inletPressure ?? this.inletPressure,
-      outletPressure: outletPressure ?? this.outletPressure,
+      pressure: pressure ?? this.pressure,
       efficiency: efficiency ?? this.efficiency,
       enthalapy: enthalapy?? this.enthalapy,
       entropy: entropy?? this.entropy,
+      temprature: temprature?? this.temprature,
     );
+  }
+
+  void updateWith({
+    double? pressure,
+    double? efficiency,
+    double? enthalapy,
+    double? entropy,
+  }) {
+    if (pressure != null) this.pressure = pressure;
+    if (efficiency != null) this.efficiency = efficiency;
+    if (enthalapy != null) this.enthalapy = enthalapy;
+    if (entropy != null) this.entropy = entropy;
   }
 }
 class Boiler extends ComponentModel{
-  double inletPressure;
-  double outletPressure;
-  double efficiency;
+  double pressure;
   double enthalapy;
   double entropy;
 
@@ -890,18 +892,14 @@ class Boiler extends ComponentModel{
     Offset position = Offset.zero,
     Map<String, ConnectionEndpoint?>? connectedTo,
 
-    this.inletPressure = 0.0,
-    this.outletPressure = 0.0,
-    this.efficiency = 0.0,
+    this.pressure=0.0,
     this.entropy = 0.0,
     this.enthalapy=0.0,
   }):super(id: id, type: "Boiler", position: position, imagePath: 'lib/presentation/assets/boiler_icon.svg');
 
   @override
   Map<String, dynamic> get properties => {
-    "inletPressure": inletPressure,
-    "outletPressure": outletPressure,
-    "efficiency": efficiency,
+    "pressure": pressure,
     "enthalapy" : enthalapy,
     "entropy" : entropy,
   };
@@ -912,8 +910,7 @@ class Boiler extends ComponentModel{
     Offset? position,
     Map<String, ConnectionEndpoint?>? connectedTo,
 
-    double? inletPressure,
-    double? outletPressure,
+    double? pressure,
     double? efficiency,
     double? enthalapy,
     double? entropy,
@@ -922,18 +919,27 @@ class Boiler extends ComponentModel{
       id: id ?? this.id,
       position: position ?? this.position,
 
-      inletPressure: inletPressure ?? this.inletPressure,
-      outletPressure: outletPressure ?? this.outletPressure,
-      efficiency: efficiency ?? this.efficiency,
+      pressure: pressure ?? this.pressure,
       entropy: entropy?? this.entropy,
       enthalapy: enthalapy?? this.enthalapy,
     );
   }
+
+  void updateWith({
+    double? pressure,
+    double? efficiency,
+    double? enthalapy,
+    double? entropy,
+  }) {
+    if (pressure != null) this.pressure = pressure;
+    if (enthalapy != null) this.enthalapy = enthalapy;
+    if (entropy != null) this.entropy = entropy;
+    if (enthalapy != null) this.entropy = enthalapy;
+  }
+
 }
 class Precipitator extends ComponentModel{
-  double inletPressure;
-  double outletPressure;
-  double efficiency;
+  double pressure;
   double entropy;
   double enthalapy;
 
@@ -942,18 +948,14 @@ class Precipitator extends ComponentModel{
     Offset position = Offset.zero,
     Map<String, ConnectionEndpoint?>? connectedTo,
 
-    this.inletPressure = 0.0,
-    this.outletPressure = 0.0,
-    this.efficiency = 0.0,
+    this.pressure=0.0,
     this.entropy = 0.0,
     this.enthalapy =0.0,
   }):super(id: id, type: "Precipitator", position: position, imagePath: 'lib/presentation/assets/precipitator_icon.svg');
 
   @override
   Map<String, dynamic> get properties => {
-    "inletPressure": inletPressure,
-    "outletPressure": outletPressure,
-    "efficiency": efficiency,
+    "pressure": pressure,
     "entropy" : entropy,
     "enthalapy" : enthalapy,
   };
@@ -974,17 +976,25 @@ class Precipitator extends ComponentModel{
       id: id ?? this.id,
       position: position ?? this.position,
 
-      inletPressure: inletPressure ?? this.inletPressure,
-      outletPressure: outletPressure ?? this.outletPressure,
-      efficiency: efficiency ?? this.efficiency,
+      pressure: pressure ?? this.pressure,
       enthalapy: enthalapy?? this.enthalapy,
       entropy: entropy ?? this.entropy,
     );
   }
+
+  void updateWith({
+    double? pressure,
+    double? efficiency,
+    double? enthalapy,
+    double? entropy,
+  }) {
+    if (pressure != null) this.pressure = pressure;
+    if (enthalapy != null) this.enthalapy = enthalapy;
+    if (entropy != null) this.entropy = entropy;
+  }
 }
 class Pump extends ComponentModel{
-  double inletPressure;
-  double outletPressure;
+  double pressure;
   double efficiency;
   double entropy;
   double enthalapy;
@@ -994,8 +1004,7 @@ class Pump extends ComponentModel{
     Offset position = Offset.zero,
     Map<String, ConnectionEndpoint?>? connectedTo,
 
-    this.inletPressure = 0.0,
-    this.outletPressure = 0.0,
+    this.pressure =0.0,
     this.efficiency = 0.0,
     this.entropy=0.0,
     this.enthalapy=0.0,
@@ -1003,8 +1012,7 @@ class Pump extends ComponentModel{
 
   @override
   Map<String, dynamic> get properties => {
-    "inletPressure": inletPressure,
-    "outletPressure": outletPressure,
+    "pressure" : pressure,
     "efficiency": efficiency,
     "entropy":entropy,
     "enthalapy" : enthalapy,
@@ -1016,8 +1024,7 @@ class Pump extends ComponentModel{
     Offset? position,
     Map<String, ConnectionEndpoint?>? connectedTo,
 
-    double? inletPressure,
-    double? outletPressure,
+    double? pressure,
     double? efficiency,
     double? entropy,
     double? enthalapy,
@@ -1026,12 +1033,22 @@ class Pump extends ComponentModel{
       id: id ?? this.id,
       position: position ?? this.position,
 
-      inletPressure: inletPressure ?? this.inletPressure,
-      outletPressure: outletPressure ?? this.outletPressure,
+      pressure: pressure ?? this.pressure,
       efficiency: efficiency ?? this.efficiency,
       entropy: entropy ?? this.entropy,
       enthalapy: enthalapy?? this.enthalapy,
     );
+  }
+  void updateWith({
+    double? pressure,
+    double? efficiency,
+    double? enthalapy,
+    double? entropy,
+  }) {
+    if (pressure != null) this.pressure = pressure;
+    if (enthalapy != null) this.enthalapy = enthalapy;
+    if (entropy != null) this.entropy = entropy;
+    if (enthalapy != null) this.entropy = enthalapy;
   }
 }
 

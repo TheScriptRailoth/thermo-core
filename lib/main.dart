@@ -1,4 +1,6 @@
+import 'package:edurank/presentation/pages/home/common.dart';
 import 'package:edurank/presentation/pages/home/home_screen.dart';
+import 'package:edurank/presentation/pages/home/stage1_update.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:menu_bar/menu_bar.dart';
@@ -194,6 +196,7 @@ class MyApp extends StatelessWidget {
           child: HomeScreen()
       ),
     );
+
   }
 }
 
