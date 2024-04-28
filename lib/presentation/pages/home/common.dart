@@ -6,13 +6,13 @@ import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:flutter_svg/svg.dart';
 import 'home_screen.dart';
 import 'package:http/http.dart' as http;
-
+double gridCellSize = 20.0;
 enum ComponentType { Turbine, Boiler, Precipitator, Pump, Inlet}
 ComponentModel? startComponent;
 ComponentModel? endComponent;
 
 class GridPainter extends CustomPainter {
-  double gridCellSize = 20.0;
+
   @override
 
   void paint(Canvas canvas, Size size) {
@@ -284,10 +284,12 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     Offset connectionPointOffset = component.connectionPoints[pointId]!;
     Offset globalPosition = renderBox.localToGlobal(component.position + connectionPointOffset - Offset(355, 28));
 
+    Offset snappedStart = snapToGridLine(globalPosition, gridCellSize);
+
     setState(() {
-      currentConnectionStart = globalPosition;
-      currentConnectionEnd = globalPosition;
-      startComponent = component;  // Set the starting component
+      currentConnectionStart = snappedStart;
+      currentConnectionEnd = snappedStart;
+      startComponent = component;
     });
   }
 
@@ -316,8 +318,10 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   void onConnectionUpdate(DragUpdateDetails details) {
     RenderBox renderBoxCanvas = _canvasKey.currentContext!.findRenderObject() as RenderBox;
     Offset localPosition = renderBoxCanvas.globalToLocal(details.globalPosition);
+
+    Offset snappedEnd = snapToGridLine(localPosition, gridCellSize);
     setState(() {
-      currentConnectionEnd = localPosition;
+      currentConnectionEnd = snappedEnd;
     });
   }
 
@@ -350,9 +354,10 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 
   void onConnectionEnd() {
     if (currentConnectionStart != null && currentConnectionEnd != null) {
+      Offset snappedEnd = snapToGridLine(currentConnectionEnd!, gridCellSize);
       endComponent = findComponentClosestTo(currentConnectionEnd!);
 
-      if (endComponent != null && isEndPointValid(currentConnectionEnd!)) {
+      if (endComponent != null && isEndPointValid(snappedEnd!)) {
         createConnection(
             startComponent!.id,
             endComponent!.id,
@@ -569,6 +574,13 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       selectedComponent = null;
     });
   }
+
+  Offset snapToGridLine(Offset point, double gridCellSize) {
+    double x = (point.dx / gridCellSize).round() * gridCellSize;
+    double y = (point.dy / gridCellSize).round() * gridCellSize;
+    return Offset(x, y);
+  }
+
 
   @override
   Widget build(BuildContext context) {

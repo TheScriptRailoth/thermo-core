@@ -102,20 +102,6 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
     }
   }
 
-  void accessState1H() {
-    if (result != null) {
-      var state1 = result['State 1'];
-      if (state1 != null && state1['h'] != 'undefined') {
-        var hValue = state1['h'];
-        print("The enthalpy (h) of State 1 is: $hValue");
-      } else {
-        print("The enthalpy (h) of State 1 is undefined or the data is not available.");
-      }
-    } else {
-      print("No result data available.");
-    }
-  }
-
   int stageUpdater(){
     int stage=0;
     if(widget.inletComponent.type =='Boiler' && widget.outletComponent.type =='Turbine')
