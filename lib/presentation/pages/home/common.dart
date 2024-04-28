@@ -267,6 +267,14 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     return null;
   }
 
+  ComponentModel? findComponentById(String Id) {
+    for (var component in placedComponents) {
+      if(component.id == Id)
+        return component;
+    }
+    return null;
+  }
+
   bool isValidConnection(ComponentModel startComponent, ComponentModel endComponent) {
     return startComponent.id != endComponent.id;
   }
@@ -357,7 +365,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
             currentConnectionStart!,
             currentConnectionEnd!
         );
-        ShowAlertOnCycleCompletion();
+        showAlertOnCycleCompletion();
       } else {
         showDialog(
             context: context,
@@ -372,7 +380,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
               ],
             )
         );
-        // Reset if invalid
         setState(() {
           currentConnectionStart = null;
           currentConnectionEnd = null;
@@ -422,9 +429,17 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     });
   }
 
-  void createConnection(String startComponentId, String endComponentId, Offset startPoint, Offset endPoint, ComponentModel inletComponent, ComponentModel outletComponent) {
+  void createConnection(String startComponentId, String endComponentId, Offset startPoint, Offset endPoint) {
     ComponentModel startComponent = placedComponents.firstWhere((comp) => comp.id == startComponentId);
     ComponentModel endComponent = placedComponents.firstWhere((comp) => comp.id == endComponentId);
+
+    ComponentModel? inletComponent = findComponentById(startComponentId);
+    ComponentModel? outletComponent = findComponentById(endComponentId);
+
+    if (inletComponent == null || outletComponent == null) {
+      print("Error: Failed to find valid inlet or outlet components.");
+      return;
+    }
 
     Connection newConnection = Connection(
       startComponentId: startComponent.id,
@@ -449,7 +464,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     print('End Point: ${newConnection.endPoint}');
   }
 
-  void ShowAlertOnCycleCompletion() {
+  void showAlertOnCycleCompletion() {
     if (isCycleComplete()) {
       print("Cycle is complete.");
       showDialog(context: context, 
@@ -524,34 +539,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       overlayEntry?.markNeedsBuild();
   }
 
-  void fetchProperties() async {
-    String pressure = _pressureController.text;
-    String temperature = _tempController.text;
-
-    try {
-      final response = await http.post(
-        Uri.parse('http://127.0.0.1:5000/calculate'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'P_boiler': double.parse(pressure),
-          'T_turbine_inlet': double.parse(temperature),
-          'P_condenser': 50.0,
-          'eta_turbine': 1.0,
-          'eta_pump': 1.0,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        result = jsonDecode(response.body);
-        print(result);
-      } else {
-        throw Exception('Failed to load properties with status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error occurred: $e');
-    }
-    print(result["Stage1"]["Enthalpy"]);
-  }
   void _showOverlay(BuildContext context) {
     if (overlayEntry != null) {
       overlayEntry!.remove();
@@ -657,8 +644,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
             currentConnectionStart: currentConnectionStart,
             currentConnectionEnd: currentConnectionEnd,
             contentValue: connections.length,
-            inletComponent: ,
-            outletComponent: ,
           ),
           child: DragTarget<DraggableComponentData>(
             onWillAccept: (data) => true,
@@ -1107,16 +1092,12 @@ class ConnectionPainter extends CustomPainter {
   Offset? currentConnectionStart;
   Offset? currentConnectionEnd;
   final int contentValue;
-  ComponentModel inletComponent;
-  ComponentModel outletComponent;
 
   ConnectionPainter({
     required this.connections,
     required this.contentValue,
     this.currentConnectionStart,
     this.currentConnectionEnd,
-    required this.inletComponent,
-    required this.outletComponent,
   });
 
   @override
@@ -1141,7 +1122,7 @@ class ConnectionPainter extends CustomPainter {
   }
 
   Connection? checkHit(Offset position) {
-    final double touchArea = 20.0;
+    final double touchArea = 20.0; // Ensure this is large enough
     for (Connection connection in connections) {
       Rect hitZone = connection.getHitZone(touchArea);
       if (hitZone.contains(position)) {

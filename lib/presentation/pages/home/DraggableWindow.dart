@@ -1,3 +1,8 @@
+import 'dart:convert';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 
 import 'common.dart';
@@ -31,6 +36,8 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
 
   @override
   void initState() {
+
+    print(widget.inletComponent.imagePath);
     super.initState();
     _tempController = TextEditingController();
     _pressureController = TextEditingController();
@@ -46,6 +53,34 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
     super.dispose();
   }
 
+  void fetchProperties() async {
+    String pressure = _pressureController.text;
+    String temperature = _tempController.text;
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:5000/calculate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'P_boiler': double.parse(pressure),
+          'T_turbine_inlet': double.parse(temperature),
+          'P_condenser': 50.0,
+          'eta_turbine': 1.0,
+          'eta_pump': 1.0,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        result = jsonDecode(response.body);
+        print(result);
+      } else {
+        throw Exception('Failed to load properties with status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error occurred: $e');
+    }
+    print(result["Stage1"]["Enthalpy"]);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -65,10 +100,9 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
         return false;
       }
     }
-
     return Container(
       width: 500,
-      height: 400,
+      height: 500,
       child: Scaffold(
         backgroundColor: Colors.grey.withOpacity(0.2),
         body: Column(
@@ -88,18 +122,48 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                 ],
               ),
             ),
+            SizedBox(height: 5,),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  height: 40,
+                  width: 40,
+                  child: Center(
+                      child: SvgPicture.asset(
+                          widget.inletComponent.imagePath.toString(),
+                        fit: BoxFit.fill,
+                      ),
+                  ),
+                ),
+                LongArrowWidget(),
+                Container(
+                  height: 40,
+                  width: 40,
+                  child: Center(
+                    child: SvgPicture.asset(
+                      widget.outletComponent.imagePath,fit: BoxFit.fill,
+                    ),
+                  ),
+                )
+              ],
+            ),
+            SizedBox(height: 3,),
+            Text("Stage : " +widget.stage.toString(), style: TextStyle(fontSize: 14, color: Colors.black, fontWeight: FontWeight.bold),),
+            SizedBox(height: 5,),
             Container(
               height: 5,
               color: Colors.grey,
             ),
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
+              child: SingleChildScrollView(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -119,9 +183,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                           ],
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
@@ -167,7 +229,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                                   width: 100,
                                   child: TextField(
                                     controller : _entropyController
-
+                        
                                   ),
                                 ),
                                 Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
@@ -184,13 +246,13 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                           ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
             Padding( padding: EdgeInsets.symmetric(vertical: 10),child: ElevatedButton(onPressed: (){
-
+                fetchProperties();
             }, child: Text("Save", style: TextStyle(color: Colors.black),)))
           ],
         ),
@@ -199,3 +261,37 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
   }
 }
 
+class ArrowPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.red
+      ..strokeWidth = 3
+      ..strokeCap = StrokeCap.square;
+
+    // Draw the line
+    canvas.drawLine(Offset(0, size.height / 2), Offset(size.width, size.height / 2), paint);
+
+    // Smaller arrowhead
+    const arrowSize = 6.0; // Smaller size for the arrowhead
+    // Extend the arrowhead to the very end of the available width
+    canvas.drawLine(Offset(size.width, size.height / 2), Offset(size.width - arrowSize, size.height / 2 - arrowSize), paint);
+    canvas.drawLine(Offset(size.width, size.height / 2), Offset(size.width - arrowSize, size.height / 2 + arrowSize), paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return false;
+  }
+}
+
+
+class LongArrowWidget extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: Size(40, 20),
+      painter: ArrowPainter(),
+    );
+  }
+}
