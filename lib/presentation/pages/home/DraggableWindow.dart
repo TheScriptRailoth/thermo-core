@@ -38,8 +38,9 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
   TextEditingController _sController = TextEditingController();
   TextEditingController _vController = TextEditingController();
   TextEditingController _xController = TextEditingController();
+  TextEditingController _hsController = TextEditingController();
+  TextEditingController _ssController = TextEditingController();
 
- int xyz=0;
   @override
   void initState() {
     super.initState();
@@ -49,6 +50,9 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
     _sController = TextEditingController();
     _xController = TextEditingController();
     _vController = TextEditingController();
+    _hsController = TextEditingController();
+    _ssController = TextEditingController();
+    fetchProperties();
   }
 
   @override
@@ -59,6 +63,8 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
     _pController.dispose();
     _sController.dispose();
     _vController.dispose();
+    _hsController.dispose();
+    _ssController.dispose();
     super.dispose();
   }
 
@@ -110,43 +116,44 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
     }
   }
 
-
   int stageUpdater(){
-    print(widget.inletComponent.type);
-    print(widget.outletComponent.type);
     int stage=0;
     if(widget.inletComponent.type =='Boiler' && widget.outletComponent.type =='Turbine')
       stage=1;
-    else if (widget.inletComponent.type =='Turbine' && widget.outletComponent.type =='Condenser')
+    else if (widget.inletComponent.type =='Turbine' && widget.outletComponent.type =='Precipitator')
       stage=2;
-    else if(widget.inletComponent.type =='Condenser' && widget.outletComponent.type =='Pump')
+    else if(widget.inletComponent.type =='Precipitator' && widget.outletComponent.type =='Pump')
       stage=3;
     else if(widget.inletComponent.type =='Pump' && widget.outletComponent.type =='Boiler')
       stage=4;
     return stage;
   }
-  void updateData(){
-    setState(() {
-      if(updatedStage ==1)
-        if (result != null) {
-          var state1 = result['State 1'];
-          if (state1 != null && state1['h'] != 'undefined') {
-            var h = state1['h'];
-            var s = state1['s'];
-            var hs = state1['hs'];
-            var ss = state1['ss'];
-            var x = state1['x'];
-            var v = state1['v'];
 
-            _hController.text = h.toString();
-            _vController.text = v.toString();
-            _sController.text = s.toString();
-            _xController.text = x.toString();
-            _vController.text = v.toString();
-          }
+  void updateData() {
+    print(updatedStage);
+    setState(() {
+      if (result != null) {
+        String stateKey = 'State $updatedStage';
+        var currentState = result[stateKey];
+        if (currentState != null) {
+          _hController.text = currentState['h'].toString().substring(0,9);
+          _sController.text = currentState['s'].toString().substring(0,9);
+          _hsController.text =currentState['hs'].toString().substring(0,9);
+          _ssController.text = currentState['ss'].toString().substring(0,9);
+          _xController.text = currentState['x'].toString().substring(0,9);
+          _vController.text = currentState['v'].toString().substring(0,9);
+        } else {
+          _hController.clear();
+          _sController.clear();
+          _hsController.clear();
+          _ssController.clear();
+          _xController.clear();
+          _vController.clear();
         }
+      }
     });
   }
+
 
   bool validateInput(String pressure, String temperature) {
     try {
@@ -157,23 +164,6 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
       return false;
     }
   }
-
-  // void updateProperties() {
-  //   double newPressure = double.parse(_pressureController.text);
-  //   double newTemperature = double.parse(_tempController.text);
-  //
-  //   if (updatedStage == 1) {
-  //
-  //   } else if (updatedStage == 2) {
-  //     // widget.inletComponent.updatePressure(newPressure);  // Condenser pressure
-  //     // No need to update temperature for condenser, just an example
-  //   }
-  //   // Add similar conditions for other stages
-  //
-  //   // Assuming we need to trigger a rebuild or update the state elsewhere
-  //   setState(() {});
-  // }
-
 
   @override
   Widget build(BuildContext context) {
@@ -243,23 +233,26 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Expanded(
+                      const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
+                            SizedBox(height: 20,),
                             Text("Pressure(P) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
-                            SizedBox(height: 10,),
+                            SizedBox(height: 20,),
                             Text("Temperature(T) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                             SizedBox(height: 10,),
                             Text("Entropy(s) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                             SizedBox(height: 10,),
                             Text("Enthalapy(h) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                             SizedBox(height: 10,),
-                            Text("Pressure(x) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
+                            Text("(x) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                             SizedBox(height: 10,),
                             Text("Specific Volume(v) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                             SizedBox(height: 10,),
-                            Text("Work Output : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
+                            Text("hs " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
+                            SizedBox(height: 10,),
+                            Text("ss " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                           ],
                         ),
                       ),
@@ -271,7 +264,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                               children: [
                                 Container(
                                   height:25,
-                                  width: 100,
+                                  width: 120,
                                   child: Center(
                                     child: TextField(
                                       controller: _pController,
@@ -279,6 +272,10 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                                       decoration: InputDecoration(
                                         border: OutlineInputBorder(),
                                       ),
+                                      scrollPadding: EdgeInsets.all(20.0),  // Ensures padding within the scroll area
+                                      keyboardType: TextInputType.text,  // Ensures the keyboard type is for general text
+                                      maxLines: 1,  // Keeps the input to one line
+                                      scrollPhysics: BouncingScrollPhysics(),
                                     ),
                                   ),
                                 ),
@@ -290,39 +287,181 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                               children: [
                                 Container(
                                   height:25,
-                                  width: 100,
-                                  child: TextField(
-                                    controller: _tController,
-                                    decoration: InputDecoration(
-                                      border: OutlineInputBorder(),
+                                  width: 120,
+                                  child: Center(
+                                    child: TextField(
+                                      controller: _tController,
+                                      cursorHeight: 18,
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(),
+                                      ),
                                     ),
                                   ),
                                 ),
                                 Text(" \u00B0C" , style: TextStyle(color: Colors.black, fontSize: 16),),
                               ],
                             ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Container(
+                                  height: 25,
+                                  width: 120,
+                                  child: TextField(
+                                  controller: _sController,
+                                  cursorHeight: 18,
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(vertical: 0),
+                                    fillColor: Colors.transparent,
+                                    filled: true,
+                                  ),
+                                  enabled: false,
+                                  style: const TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 16,
+                                  ),
+                                  keyboardType: TextInputType.text,
+                                  maxLines: 1,
+                                  scrollPhysics: const BouncingScrollPhysics(),
+                                  textAlign: TextAlign.center,  // Centers the text
+                              ),
+                            ),
+                                const Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                              ],
+                            ),
                             SizedBox(height: 10,),
                             Row(
                               children: [
                                 Container(
-                                  height : 25,
-                                  width: 100,
+                                  height: 25,
+                                  width: 120,
                                   child: TextField(
-                                    controller : _hController
-
+                                    controller: _hController,
+                                    cursorHeight: 18,
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      disabledBorder: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(vertical: 0),
+                                      fillColor: Colors.transparent,
+                                      filled: true,
+                                    ),
+                                    enabled: false,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                    ),
+                                    keyboardType: TextInputType.text,
+                                    maxLines: 1,
+                                    scrollPhysics: const BouncingScrollPhysics(),
+                                    textAlign: TextAlign.center,  // Centers the text
                                   ),
                                 ),
                                 Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
                               ],
                             ),
                             SizedBox(height: 10,),
-                            TextField(controller: _sController, style: TextStyle(color: Colors.black, fontSize: 16,),),
+                            Row(
+                              children: [
+                                Container(
+                                  height: 25,
+                                  width: 120,
+                                  child: TextField(
+                                    controller: _xController,
+                                    cursorHeight: 18,
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      disabledBorder: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(vertical: 0),
+                                      fillColor: Colors.transparent,
+                                      filled: true,
+                                    ),
+                                    enabled: false,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                    ),
+                                    keyboardType: TextInputType.text,
+                                    maxLines: 1,
+                                    scrollPhysics: const BouncingScrollPhysics(),
+                                    textAlign: TextAlign.center,  // Centers the text
+                                  ),
+                                ),
+                                Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                              ],
+                            ),
                             SizedBox(height: 10,),
-                            Text("765 " , style: TextStyle(color: Colors.black, fontSize: 16,),),
-                            SizedBox(height: 10,),
-                            Text("6546" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                            Row(
+                              children: [
+                                Container(
+                                  height: 25,
+                                  width: 120,
+                                  child: TextField(
+                                    controller: _vController,
+                                    cursorHeight: 18,
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      disabledBorder: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(vertical: 0),
+                                      fillColor: Colors.transparent,
+                                      filled: true,
+                                    ),
+                                    enabled: false,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                    ),
+                                    keyboardType: TextInputType.text,
+                                    maxLines: 1,
+                                    scrollPhysics: const BouncingScrollPhysics(),
+                                    textAlign: TextAlign.center,  // Centers the text
+                                  ),
+                                ),
+                                Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                              ],
+                            ),
                             SizedBox(height:10,),
-                            Text("6546" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                            Row(
+                              children: [
+                                Container(
+                                  height: 25,
+                                  width: 120,
+                                  child: TextField(
+                                    controller: _hsController,
+                                    cursorHeight: 18,
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      disabledBorder: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(vertical: 0),
+                                      fillColor: Colors.transparent,
+                                      filled: true,
+                                    ),
+                                    enabled: false,
+                                    style: const TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                    ),
+                                    keyboardType: TextInputType.text,
+                                    maxLines: 1,
+                                    scrollPhysics: const BouncingScrollPhysics(),
+                                    textAlign: TextAlign.center,  // Centers the text
+                                  ),
+                                ),
+                                Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                              ],
+                            ),
                           ],
                         ),
                       ),
