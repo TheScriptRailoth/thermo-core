@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+
+import 'common.dart';
 
 class PropertyEditWindow extends StatefulWidget {
   final VoidCallback onClose;
   final void Function(DragUpdateDetails) onDrag;
+  int? stage;
+  ComponentModel inletComponent;
+  ComponentModel outletComponent;
 
-  const PropertyEditWindow({
+  PropertyEditWindow({
     super.key,
     required this.onClose,
     required this.onDrag,
+    required this.stage,
+    required this.inletComponent,
+    required this.outletComponent,
   });
 
   @override
@@ -17,43 +23,46 @@ class PropertyEditWindow extends StatefulWidget {
 }
 
 class _PropertyEditWindowState extends State<PropertyEditWindow> {
+  var result;
   TextEditingController _pressureController = TextEditingController();
   TextEditingController _tempController = TextEditingController();
+  TextEditingController _enthalapyController = TextEditingController();
+  TextEditingController _entropyController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _tempController = TextEditingController();
+    _pressureController = TextEditingController();
+    _enthalapyController = TextEditingController();
   }
 
   @override
   void dispose() {
     _tempController.dispose();
+    _enthalapyController.dispose();
+    _entropyController.dispose();
+    _pressureController.dispose();
     super.dispose();
   }
+
 
   @override
   Widget build(BuildContext context) {
 
-    void fetchProperties(String pressure, String temperature) async {
-      final response = await http.post(
-        Uri.parse('http://127.0.0.1:5000/calculate'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'P_boiler': double.parse(pressure),
-          'T_turbine_inlet': double.parse(temperature),
-          'P_condenser': double.parse("50"),
-          'eta_turbine': 1.0,
-          'eta_pump': 1.0,
-        }),
-      );
-      if (response.statusCode == 200) {
-        var result = jsonDecode(response.body);
-        print(result);
-      } else {
-        throw Exception('Failed to load properties with status code: ${response.statusCode}');
+    void updateData(){
+      setState(() {
+        _enthalapyController.text = result['Stage1']['Enthalpy'].toString();
+      });
+    }
+
+    bool validateInput(String pressure, String temperature) {
+      try {
+        final double p = double.parse(pressure);
+        final double t = double.parse(temperature);
+        return p > 0 && t > 0;
+      } catch (e) {
+        return false;
       }
     }
 
@@ -153,7 +162,14 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                             SizedBox(height: 10,),
                             Row(
                               children: [
-                                Text("", style: TextStyle(color: Colors.black, fontSize: 16,),),
+                                Container(
+                                  height : 25,
+                                  width: 100,
+                                  child: TextField(
+                                    controller : _entropyController
+
+                                  ),
+                                ),
                                 Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
                               ],
                             ),
@@ -174,7 +190,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
               ),
             ),
             Padding( padding: EdgeInsets.symmetric(vertical: 10),child: ElevatedButton(onPressed: (){
-              fetchProperties("1500", "500");
+
             }, child: Text("Save", style: TextStyle(color: Colors.black),)))
           ],
         ),

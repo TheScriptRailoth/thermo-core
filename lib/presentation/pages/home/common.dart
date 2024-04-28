@@ -7,7 +7,7 @@ import 'package:flutter_svg/svg.dart';
 import 'home_screen.dart';
 import 'package:http/http.dart' as http;
 
-enum ComponentType { Turbine, Boiler, Precipitator, WaterPump, Inlet}
+enum ComponentType { Turbine, Boiler, Precipitator, Pump, Inlet}
 ComponentModel? startComponent;
 ComponentModel? endComponent;
 
@@ -202,9 +202,34 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
   List<Connection> connections = [];
   ComponentModel ?selectedComponent;
 
-
   late ConnectionPainter _connectionPainter;
 
+  Connection? currentTappedConnection;
+
+
+  var result;
+  TextEditingController _pressureController = TextEditingController();
+  TextEditingController _tempController = TextEditingController();
+  TextEditingController _enthalapyController = TextEditingController();
+  TextEditingController _entropyController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _connectionPainter = ConnectionPainter(connections: connections, contentValue: connections.length);
+    _tempController = TextEditingController();
+    _pressureController = TextEditingController();
+    _enthalapyController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _tempController.dispose();
+    _enthalapyController.dispose();
+    _entropyController.dispose();
+    _pressureController.dispose();
+    super.dispose();
+  }
 
   void _selectComponent(ComponentModel component) {
     setState(() {
@@ -397,7 +422,7 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     });
   }
 
-  void createConnection(String startComponentId, String endComponentId, Offset startPoint, Offset endPoint) {
+  void createConnection(String startComponentId, String endComponentId, Offset startPoint, Offset endPoint, ComponentModel inletComponent, ComponentModel outletComponent) {
     ComponentModel startComponent = placedComponents.firstWhere((comp) => comp.id == startComponentId);
     ComponentModel endComponent = placedComponents.firstWhere((comp) => comp.id == endComponentId);
 
@@ -406,6 +431,9 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       endComponentId: endComponent.id,
       startPoint: startPoint,
       endPoint: endPoint,
+      stage: connections.length+1,
+      inletComponent: inletComponent,
+      outletComponent: outletComponent,
     );
 
     setState(() {
@@ -496,6 +524,34 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       overlayEntry?.markNeedsBuild();
   }
 
+  void fetchProperties() async {
+    String pressure = _pressureController.text;
+    String temperature = _tempController.text;
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://127.0.0.1:5000/calculate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'P_boiler': double.parse(pressure),
+          'T_turbine_inlet': double.parse(temperature),
+          'P_condenser': 50.0,
+          'eta_turbine': 1.0,
+          'eta_pump': 1.0,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        result = jsonDecode(response.body);
+        print(result);
+      } else {
+        throw Exception('Failed to load properties with status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error occurred: $e');
+    }
+    print(result["Stage1"]["Enthalpy"]);
+  }
   void _showOverlay(BuildContext context) {
     if (overlayEntry != null) {
       overlayEntry!.remove();
@@ -516,6 +572,9 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 
             },
             onDrag: _updateOverlayPosition,
+            stage: currentTappedConnection!.stage,
+            inletComponent: currentTappedConnection!.inletComponent,
+            outletComponent: currentTappedConnection!.outletComponent,
           ),
         ),
       ),
@@ -528,12 +587,6 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
       selectedComponent?.isSelected = false;
       selectedComponent = null;
     });
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _connectionPainter = ConnectionPainter(connections: connections, contentValue: connections.length);
   }
 
   @override
@@ -555,6 +608,9 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
         final Connection? tappedConnection = _connectionPainter.checkHit(localPosition);
         if (tappedConnection != null) {
           print("Tapped on connection from ${tappedConnection.startComponentId} to ${tappedConnection.endComponentId}");
+          setState(() {
+            currentTappedConnection = tappedConnection;
+          });
           if(isCycleComplete())
           _showOverlay(context);
           else{
@@ -601,6 +657,8 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
             currentConnectionStart: currentConnectionStart,
             currentConnectionEnd: currentConnectionEnd,
             contentValue: connections.length,
+            inletComponent: ,
+            outletComponent: ,
           ),
           child: DragTarget<DraggableComponentData>(
             onWillAccept: (data) => true,
@@ -699,8 +757,8 @@ class ComponentFactory {
         return Boiler(id: id, position: position);
       case ComponentType.Precipitator:
         return Precipitator(id: id, position:position);
-      case ComponentType.WaterPump:
-        return WaterPump(id: id,position: position);
+      case ComponentType.Pump:
+        return Pump(id: id,position: position);
       default:
         throw Exception("Unknown component type");
     }
@@ -939,14 +997,14 @@ class Precipitator extends ComponentModel{
     );
   }
 }
-class WaterPump extends ComponentModel{
+class Pump extends ComponentModel{
   double inletPressure;
   double outletPressure;
   double efficiency;
   double entropy;
   double enthalapy;
 
-  WaterPump({
+  Pump({
     required String id,
     Offset position = Offset.zero,
     Map<String, ConnectionEndpoint?>? connectedTo,
@@ -956,7 +1014,7 @@ class WaterPump extends ComponentModel{
     this.efficiency = 0.0,
     this.entropy=0.0,
     this.enthalapy=0.0,
-  }):super(id: id, type: "WaterPump", position: position, imagePath: 'lib/presentation/assets/water_pump_icon.svg');
+  }):super(id: id, type: "Pump", position: position, imagePath: 'lib/presentation/assets/water_pump_icon.svg');
 
   @override
   Map<String, dynamic> get properties => {
@@ -968,7 +1026,7 @@ class WaterPump extends ComponentModel{
   };
 
   @override
-  WaterPump copyWith({
+  Pump copyWith({
     String? id,
     Offset? position,
     Map<String, ConnectionEndpoint?>? connectedTo,
@@ -979,7 +1037,7 @@ class WaterPump extends ComponentModel{
     double? entropy,
     double? enthalapy,
   }) {
-    return WaterPump(
+    return Pump(
       id: id ?? this.id,
       position: position ?? this.position,
 
@@ -1004,12 +1062,19 @@ class Connection {
   Offset endPoint;
   String startComponentId;
   String endComponentId;
+  int stage;
+  ComponentModel inletComponent;
+  ComponentModel outletComponent;
 
   Connection({
     required this.startPoint,
     required this.endPoint,
     required this.startComponentId,
-    required this.endComponentId});
+    required this.endComponentId,
+    required this.stage,
+    required this.inletComponent,
+    required this.outletComponent,
+  });
 
   Rect getHitZone(double touchWidth) {
     final double halfWidth = touchWidth / 2;
@@ -1042,12 +1107,16 @@ class ConnectionPainter extends CustomPainter {
   Offset? currentConnectionStart;
   Offset? currentConnectionEnd;
   final int contentValue;
+  ComponentModel inletComponent;
+  ComponentModel outletComponent;
 
   ConnectionPainter({
     required this.connections,
     required this.contentValue,
     this.currentConnectionStart,
     this.currentConnectionEnd,
+    required this.inletComponent,
+    required this.outletComponent,
   });
 
   @override
@@ -1072,7 +1141,7 @@ class ConnectionPainter extends CustomPainter {
   }
 
   Connection? checkHit(Offset position) {
-    final double touchArea = 20.0; // Ensure this is large enough
+    final double touchArea = 20.0;
     for (Connection connection in connections) {
       Rect hitZone = connection.getHitZone(touchArea);
       if (hitZone.contains(position)) {

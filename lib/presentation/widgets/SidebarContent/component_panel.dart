@@ -9,7 +9,7 @@ class ComponentSidebar extends StatelessWidget {
     'lib/presentation/assets/precipitator_icon.svg',
     'lib/presentation/assets/water_pump_icon.svg',
   ];
-  final List<String> componentsTitle = ['Turbine', "Boiler", "Precipitator", "WaterPump"];
+  final List<String> componentsTitle = ['Turbine', "Boiler", "Condenser", "Pump"];
   final String? selectedComponentId;
 
   ComponentModel createComponent(String type) {
@@ -18,9 +18,9 @@ class ComponentSidebar extends StatelessWidget {
         return Turbine(id: UniqueKey().toString(), position: Offset.zero);
       case 'Boiler':
         return Boiler(id: UniqueKey().toString(), position: Offset.zero);
-      case 'WaterPump':
-        return WaterPump(id: UniqueKey().toString(), position: Offset.zero);
-      case 'Precipitator':
+      case 'Pump':
+        return Pump(id: UniqueKey().toString(), position: Offset.zero);
+      case 'Condenser':
         return Precipitator(id: UniqueKey().toString(), position: Offset.zero);
       default:
         throw Exception('Unknown component type: $type');
