@@ -52,21 +52,9 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
     _vController = TextEditingController();
     _hsController = TextEditingController();
     _ssController = TextEditingController();
-    fetchProperties();
   }
 
-  @override
-  void dispose() {
-    _tController.dispose();
-    _hController.dispose();
-    _xController.dispose();
-    _pController.dispose();
-    _sController.dispose();
-    _vController.dispose();
-    _hsController.dispose();
-    _ssController.dispose();
-    super.dispose();
-  }
+
 
   String apiUrl = 'http://127.0.0.1:5000/calculate';
   void fetchProperties() async {
@@ -232,13 +220,13 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                             SizedBox(height: 10,),
                             Text("Enthalapy(h) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                             SizedBox(height: 10,),
-                            Text("(x) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
+                            Text("Dryness Fraction(x) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                             SizedBox(height: 10,),
                             Text("Specific Volume(v) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                             SizedBox(height: 10,),
-                            Text("hs " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
+                            Text("h at Saturated(hs) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                             SizedBox(height: 10,),
-                            Text("ss " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
+                            Text("s at Saturated(ss) : " , style: TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),),
                           ],
                         ),
                       ),
@@ -287,6 +275,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                                 Text(" \u00B0C" , style: TextStyle(color: Colors.black, fontSize: 16),),
                               ],
                             ),
+
                             Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -317,7 +306,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                                   textAlign: TextAlign.center,  // Centers the text
                               ),
                             ),
-                                const Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                                const Text(" " , style: TextStyle(color: Colors.black, fontSize: 16,),),
                               ],
                             ),
                             SizedBox(height: 10,),
@@ -349,7 +338,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                                     textAlign: TextAlign.center,  // Centers the text
                                   ),
                                 ),
-                                Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                                Text(" " , style: TextStyle(color: Colors.black, fontSize: 16,),),
                               ],
                             ),
                             SizedBox(height: 10,),
@@ -381,7 +370,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                                     textAlign: TextAlign.center,  // Centers the text
                                   ),
                                 ),
-                                Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                                Text(" " , style: TextStyle(color: Colors.black, fontSize: 16,),),
                               ],
                             ),
                             SizedBox(height: 10,),
@@ -413,7 +402,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                                     textAlign: TextAlign.center,  // Centers the text
                                   ),
                                 ),
-                                Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                                Text(" " , style: TextStyle(color: Colors.black, fontSize: 16,),),
                               ],
                             ),
                             SizedBox(height:10,),
@@ -445,7 +434,7 @@ class _PropertyEditWindowState extends State<PropertyEditWindow> {
                                     textAlign: TextAlign.center,  // Centers the text
                                   ),
                                 ),
-                                Text(" J/k" , style: TextStyle(color: Colors.black, fontSize: 16,),),
+                                Text(" " , style: TextStyle(color: Colors.black, fontSize: 16,),),
                               ],
                             ),
                           ],

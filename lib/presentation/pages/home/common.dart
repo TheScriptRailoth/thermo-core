@@ -198,6 +198,8 @@ class RankineCycleCanvas extends StatefulWidget {
   _RankineCycleCanvasState createState() => _RankineCycleCanvasState();
 }
 class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
+
+  int updatedStage =0;
   List<ComponentModel> placedComponents = [];
   List<Connection> connections = [];
   ComponentModel ?selectedComponent;
@@ -252,6 +254,12 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
 
   Offset? currentConnectionStart;
   Offset? currentConnectionEnd;
+
+  Offset snapToGridLine(Offset point, double gridCellSize) {
+    double x = (point.dx / gridCellSize).round() * gridCellSize;
+    double y = (point.dy / gridCellSize).round() * gridCellSize;
+    return Offset(x, y);
+  }
 
   ComponentModel? findComponentByPoint(Offset point) {
     for (var component in placedComponents) {
@@ -575,15 +583,23 @@ class _RankineCycleCanvasState extends State<RankineCycleCanvas> {
     });
   }
 
-  Offset snapToGridLine(Offset point, double gridCellSize) {
-    double x = (point.dx / gridCellSize).round() * gridCellSize;
-    double y = (point.dy / gridCellSize).round() * gridCellSize;
-    return Offset(x, y);
+  int stageUpdater(){
+    int stage=0;
+    if(currentTappedConnection?.inletComponent.type =='Boiler' && currentTappedConnection?.outletComponent.type =='Turbine')
+      stage=1;
+    else if (currentTappedConnection?.inletComponent.type =='Turbine' && currentTappedConnection?.outletComponent.type =='Precipitator')
+      stage=2;
+    else if(currentTappedConnection?.inletComponent.type =='Precipitator' && currentTappedConnection?.outletComponent.type =='Pump')
+      stage=3;
+    else if(currentTappedConnection?.inletComponent.type =='Pump' && currentTappedConnection?.outletComponent.type =='Boiler')
+      stage=4;
+    return stage;
   }
 
 
   @override
   Widget build(BuildContext context) {
+    updatedStage =stageUpdater();
     return GestureDetector(
       onTap: (){
         if(selectedComponent!=null){
