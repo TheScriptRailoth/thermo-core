@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rankine Cycle Calculator</title>
+</head>
+<body>
+    <h1>Rankine Cycle Calculator</h1>
+    <form method="post">
+        Boiler Pressure (kPa): <input type="text" name="P_boiler"><br>
+        Boiler Temperature (°C): <input type="text" name="T_boiler"><br>
+        Condenser Pressure (kPa): <input type="text" name="P_condenser"><br>
+        <button type="submit">Calculate</button>
+    </form>
+    {% if results %}
+        <h2>Results:</h2>
+        <ul>
+            {% for key, value in results.items() %}
+            <li>{{ key }}: {{ value }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>
