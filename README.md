@@ -43,18 +43,18 @@ Before installation, ensure your system meets the following requirements:
 
 Explore some snapshots of ThermoCore in action, demonstrating its various capabilities and the user interface:
 
-| Feature                   | Screenshot                                                |
-|---------------------------|-----------------------------------------------------------|
-| **Main Interface**        | ![Main Interface](lib/Screenshots/main_interface.png)     |
-| **Component Placement**   | ![Component Placement](lib/Screenshots/component.png)     |
-| **Cycle Completion**      | ![Cycle Completion](lib/Screenshots/cycle_complete.png)   |
-| **Properties Panel**      | ![Properties Panel](lib/Screenshots/property_panel.png)   |
-| **Editing Menu**          | ![Edit Menu](lib/Screenshots/edit_menu.png)               |
-| **Context Menu**          | ![Context Menu](lib/Screenshots/context_menu1.png)        |
-| **Deleting Connection**   | ![Delete Connection](lib/Screenshots/delete_connection.png) |
-| **Joining Components**    | ![Joining Components](lib/Screenshots/joining.png)        |
-| **Menu Bar**              | ![Menu Bar](lib/Screenshots/menu_bar.png)                 |
-| **Property Editing**      | ![Property Editing](lib/Screenshots/property_edit.png)    |
+| Feature                   | Screenshot                                                  |
+|---------------------------|-------------------------------------------------------------|
+| **Main Interface**        | ![Main Interface](lib/Screenshots/main_interface.png)       |
+| **Component Placement**   | ![Component Placement](lib/Screenshots/component.png)       |
+| **Cycle Completion**      | ![Cycle Completion](lib/Screenshots/cycle complete.png)     |
+| **Properties Panel**      | ![Properties Panel](lib/Screenshots/property panel.png)     |
+| **Editing Menu**          | ![Edit Menu](lib/Screenshots/edit menu.png)                 |
+| **Context Menu**          | ![Context Menu](lib/Screenshots/context menu1.png)          |
+| **Deleting Connection**   | ![Delete Connection](lib/Screenshots/delete connection.png) |
+| **Joining Components**    | ![Joining Components](lib/Screenshots/joining.png)          |
+| **Menu Bar**              | ![Menu Bar](lib/Screenshots/menu bar.png)                   |
+| **Property Editing**      | ![Property Editing](lib/Screenshots/property edit.png)      |
 
 
 
